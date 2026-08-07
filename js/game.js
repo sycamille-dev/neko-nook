@@ -196,6 +196,82 @@ function scheduleCatVisit() {
   }, delay);
 }
 
+const HERO_OPTIONS = [
+  'assets/cat-hero.jpg',
+  'assets/cat-friend-1.jpg',
+  'assets/cat-friend-2.jpg'
+];
+
+const heroAvatar = document.querySelector('.hero-avatar');
+
+function updateTopbarAvatar() {
+  heroAvatar.src = gameState.heroImage;
+}
+
+function renderHeroSelect() {
+  const el = document.getElementById('hero-select');
+  el.innerHTML = HERO_OPTIONS.map(
+    (src) => `
+      <button class="hero-option ${gameState.heroImage === src ? 'selected' : ''}" data-hero="${src}">
+        <img src="${src}" alt="Neko">
+      </button>`
+  ).join('');
+}
+
+function renderStatsLine() {
+  const el = document.getElementById('stats-line');
+  const { wins, losses, draws } = gameState.tttRecord;
+  el.textContent =
+    `🪙 Total coins earned: ${gameState.totalEarned}` +
+    ` · 🐾 Cat-Tac-Toe: ${wins}W ${losses}L ${draws}D` +
+    ` · 💧 Best Pac-Paws stage: ${gameState.pacPawsBestStage}` +
+    ` · 📖 Cats in Catdex: ${gameState.catdex.length}`;
+}
+
+function openSettings() {
+  renderHeroSelect();
+  renderStatsLine();
+  document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function closeSettings() {
+  document.getElementById('settings-modal').classList.add('hidden');
+}
+
+document.getElementById('open-settings').addEventListener('click', openSettings);
+document.getElementById('close-settings').addEventListener('click', closeSettings);
+
+document.getElementById('settings-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'settings-modal') closeSettings();
+  const heroBtn = e.target.closest('[data-hero]');
+  if (heroBtn) {
+    gameState.heroImage = heroBtn.dataset.hero;
+    saveState();
+    updateTopbarAvatar();
+    renderHeroSelect();
+    window.dispatchEvent(new CustomEvent('neko-hero-change', { detail: { src: gameState.heroImage } }));
+    notify('😺 Your Neko changed!');
+  }
+});
+
+document.getElementById('reset-progress').addEventListener('click', () => {
+  if (confirm('Reset ALL progress? Coins, items, cats and records will be cleared.')) {
+    localStorage.removeItem('neko-nook-save');
+    location.reload();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closeShop();
+    closeSettings();
+  }
+});
+
+updateCoinUI();
+updateTopbarAvatar();
+renderInventory();
+
 function openShop() {
   renderShop();
   document.getElementById('shop-modal').classList.remove('hidden');
@@ -233,6 +309,7 @@ document.getElementById('view-porch').addEventListener('click', (e) => {
 });
 
 updateCoinUI();
+updateTopbarAvatar();
 renderInventory();
 renderPlaced();
 renderCats();

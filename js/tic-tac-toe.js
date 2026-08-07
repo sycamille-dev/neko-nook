@@ -1,8 +1,9 @@
-import { addCoins, notify } from './state.js';
+import { addCoins, notify, gameState, saveState } from './state.js';
 
 const boardEl = document.getElementById('ttt-board');
 const statusEl = document.getElementById('ttt-status');
 const restartBtn = document.getElementById('ttt-restart');
+const recordEl = document.getElementById('ttt-record');
 
 const LINES = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -45,6 +46,17 @@ function findLineFor(symbol) {
   });
 }
 
+function updateRecordUI() {
+  const { wins, losses, draws } = gameState.tttRecord;
+  recordEl.textContent = `Record — ${wins}W · ${losses}L · ${draws}D`;
+}
+
+function bumpRecord(result) {
+  gameState.tttRecord[result] += 1;
+  saveState();
+  updateRecordUI();
+}
+
 function checkEnd() {
   for (const line of LINES) {
     const [a, b, c] = line;
@@ -55,9 +67,11 @@ function checkEnd() {
       });
       if (board[a] === 'Paw') {
         addCoins(20);
+        bumpRecord('wins');
         statusEl.textContent = '🏆 You win! +20 Neko Coins';
         notify('🏆 Cat-Tac-Toe victory! +20 Neko Coins');
       } else {
+        bumpRecord('losses');
         statusEl.textContent = '🐟 Fish wins! Try again, meow.';
       }
       return true;
@@ -65,6 +79,7 @@ function checkEnd() {
   }
   if (emptyCells().length === 0) {
     gameOver = true;
+    bumpRecord('draws');
     statusEl.textContent = "🤝 It's a draw!";
     return true;
   }
@@ -118,3 +133,4 @@ function restart() {
 restartBtn.addEventListener('click', restart);
 buildBoard();
 restart();
+updateRecordUI();

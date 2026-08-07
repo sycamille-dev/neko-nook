@@ -70,6 +70,27 @@ body {
   white-space: nowrap;
 }
 
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gear-btn {
+  border: 2px solid var(--border);
+  background: var(--card);
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  font-size: 1.15rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.gear-btn:hover {
+  transform: rotate(25deg);
+}
+
 .tabs {
   display: flex;
   gap: 10px;
@@ -456,6 +477,69 @@ canvas {
   color: var(--muted);
   font-size: 0.85rem;
   margin-bottom: 8px;
+}
+
+.record {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 10px 0 0;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.hero-option {
+  border: 3px solid var(--border);
+  background: none;
+  border-radius: 16px;
+  padding: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.hero-option:hover {
+  transform: translateY(-2px);
+}
+
+.hero-option img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+}
+
+.hero-option.selected {
+  border-color: var(--pink);
+  box-shadow: 0 0 0 3px rgba(224, 122, 95, 0.2);
+}
+
+.stats-line {
+  color: var(--ink);
+  font-size: 0.9rem;
+  background: #fffaf2;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 0;
+}
+
+.btn-danger {
+  background: #f4d7d7;
+  border: 2px solid #e8a9a9;
+  color: #a34545;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: #f0c6c6;
 }
 
 .toast {

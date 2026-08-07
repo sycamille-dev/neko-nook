@@ -1,9 +1,11 @@
-import { addCoins, notify } from './state.js';
+import { addCoins, notify, gameState, saveState } from './state.js';
 
 const canvas = document.getElementById('pacPawsCanvas');
 const ctx = canvas.getContext('2d');
 const coinDisplay = document.getElementById('pp-coins');
 const biscuitDisplay = document.getElementById('pp-biscuits');
+const stageDisplay = document.getElementById('pp-stage');
+const bestDisplay = document.getElementById('pp-best');
 const arcadeView = document.getElementById('view-arcade');
 
 const TILE_SIZE = 30;
@@ -25,21 +27,42 @@ const mazeMap = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
+const GHOST_SPAWNS = [
+  [5, 5],
+  [6, 5],
+  [4, 5],
+  [7, 5],
+  [5, 7],
+  [5, 3]
+];
+
 let grid = [];
 let coinsEarned = 0;
 let totalBiscuits = 0;
+let stage = 1;
+let bestStage = gameState.pacPawsBestStage || 1;
+let ghosts = [];
+let loopTimer = null;
 
 const cat = { x: 1, y: 1, dirX: 0, dirY: 0, nextDirX: 0, nextDirY: 0 };
 
-const ghosts = [
-  { x: 5, y: 5, dirX: 1, dirY: 0 },
-  { x: 6, y: 5, dirX: -1, dirY: 0 }
-];
-
 const heroSprite = new Image();
-heroSprite.src = 'assets/cat-hero.jpg';
+heroSprite.src = gameState.heroImage;
 
-function init() {
+window.addEventListener('neko-hero-change', (e) => {
+  heroSprite.src = e.detail.src;
+});
+
+function ghostCountForStage(s) {
+  return Math.min(s + 1, GHOST_SPAWNS.length);
+}
+
+function loopDelay() {
+  return Math.max(150, 250 - (stage - 1) * 25);
+}
+
+function startStage(newStage) {
+  stage = newStage;
   grid = mazeMap.map((row) => [...row]);
   cat.x = 1;
   cat.y = 1;
@@ -47,15 +70,21 @@ function init() {
   cat.dirY = 0;
   cat.nextDirX = 0;
   cat.nextDirY = 0;
-  ghosts[0].x = 5;
-  ghosts[0].y = 5;
-  ghosts[0].dirX = 1;
-  ghosts[0].dirY = 0;
-  ghosts[1].x = 6;
-  ghosts[1].y = 5;
-  ghosts[1].dirX = -1;
-  ghosts[1].dirY = 0;
+  ghosts = GHOST_SPAWNS.slice(0, ghostCountForStage(stage)).map(([x, y]) => ({ x, y, dirX: 0, dirY: 0 }));
   totalBiscuits = grid.flat().filter((t) => t === 0).length;
+
+  if (stage > bestStage) {
+    bestStage = stage;
+    gameState.pacPawsBestStage = bestStage;
+    saveState();
+  }
+
+  clearInterval(loopTimer);
+  loopTimer = setInterval(() => {
+    update();
+    render();
+  }, loopDelay());
+
   updateUI();
 }
 
@@ -106,8 +135,8 @@ function update() {
     if (totalBiscuits === 0) {
       coinsEarned += 50;
       addCoins(50);
-      notify('🎉 Stage cleared! +50 bonus Neko Coins!');
-      init();
+      notify(`🎉 Stage ${stage} cleared! +50 bonus Neko Coins!`);
+      startStage(stage + 1);
       return;
     }
   }
@@ -128,8 +157,8 @@ function update() {
     }
 
     if (ghost.x === cat.x && ghost.y === cat.y) {
-      notify('💧 Splashed by a water drop! Try again.');
-      init();
+      notify('💧 Splashed by a water drop! Back to stage 1.');
+      startStage(1);
       return;
     }
   }
@@ -138,6 +167,8 @@ function update() {
 function updateUI() {
   coinDisplay.textContent = coinsEarned;
   biscuitDisplay.textContent = totalBiscuits;
+  stageDisplay.textContent = stage;
+  bestDisplay.textContent = bestStage;
 }
 
 function drawRoundSprite(img, cx, cy, size) {
@@ -191,8 +222,4 @@ function render() {
   }
 }
 
-init();
-setInterval(() => {
-  update();
-  render();
-}, 250);
+startStage(1);

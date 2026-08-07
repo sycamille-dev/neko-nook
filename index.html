@@ -13,7 +13,10 @@
     <img class="hero-avatar" src="assets/cat-hero.jpg" alt="Neko">
     <h1>🐾 Neko Nook</h1>
   </div>
-  <div class="coin-counter">🪙 <span id="coin-count">0</span> Neko Coins</div>
+  <div class="topbar-right">
+    <div class="coin-counter">🪙 <span id="coin-count">0</span> Neko Coins</div>
+    <button id="open-settings" class="gear-btn" title="Settings">⚙️</button>
+  </div>
 </header>
 
 <nav class="tabs">
@@ -58,14 +61,15 @@
         <h2>🐾 Cat-Tac-Toe <span class="vs">vs</span> 🐟 Fish</h2>
         <div id="ttt-status" class="stats">Your turn — you are Paw</div>
         <div id="ttt-board" class="ttt-board"></div>
+        <div id="ttt-record" class="record">Record — 0W · 0L · 0D</div>
         <button id="ttt-restart" class="btn-soft">Play Again</button>
         <p class="hint">Win the round to earn +20 Neko Coins.</p>
       </div>
       <div class="game-card">
         <h2>💧 Pac-Paws</h2>
-        <div class="stats">Coins: <span id="pp-coins">0</span> | Biscuits: <span id="pp-biscuits">0</span></div>
+        <div class="stats">Coins: <span id="pp-coins">0</span> | Biscuits: <span id="pp-biscuits">0</span> | Stage: <span id="pp-stage">1</span> | Best: <span id="pp-best">1</span></div>
         <canvas id="pacPawsCanvas" width="360" height="360"></canvas>
-        <p class="hint">Arrow Keys / WASD to move the cat, dodge the 💧 water drops, eat every 🍪. Clear the maze for a +50 bonus!</p>
+        <p class="hint">Arrow Keys / WASD to move the cat, dodge the 💧 water drops, eat every 🍪. Clear the maze for a +50 bonus — each stage adds a water drop and speeds up!</p>
       </div>
     </div>
   </section>
@@ -82,6 +86,24 @@
       <div id="shop-treats" class="shop-grid"></div>
       <h3>🧸 Toys <span class="price-range">$30–$100</span></h3>
       <div id="shop-toys" class="shop-grid"></div>
+    </div>
+  </div>
+</div>
+
+<div id="settings-modal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>⚙️ Settings</h2>
+      <button id="close-settings" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <h3>😺 Your Neko</h3>
+      <div id="hero-select" class="hero-grid"></div>
+      <p class="hint">Pick which photo is you. It appears in the top bar and in Pac-Paws!</p>
+      <h3>📊 Stats</h3>
+      <p id="stats-line" class="stats-line"></p>
+      <h3>🧹 Danger Zone</h3>
+      <button id="reset-progress" class="btn-danger">Reset All Progress</button>
     </div>
   </div>
 </div>

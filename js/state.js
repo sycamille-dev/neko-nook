@@ -5,7 +5,11 @@ const defaultState = {
   inventory: { food: [], toys: [] },
   placedItems: [],
   visitingCats: [],
-  catdex: []
+  catdex: [],
+  heroImage: 'assets/cat-hero.jpg',
+  totalEarned: 0,
+  tttRecord: { wins: 0, losses: 0, draws: 0 },
+  pacPawsBestStage: 1
 };
 
 function loadState() {
@@ -46,6 +50,7 @@ export function updateCoinUI() {
 
 export function addCoins(n) {
   gameState.coins += n;
+  gameState.totalEarned += n;
   saveState();
   updateCoinUI();
 }
