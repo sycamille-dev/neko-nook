@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neko Nook</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <img class="hero-avatar" src="assets/cat-hero.jpg" alt="Neko">
+    <h1>🐾 Neko Nook</h1>
+  </div>
+  <div class="coin-counter">🪙 <span id="coin-count">0</span> Neko Coins</div>
+</header>
+
+<nav class="tabs">
+  <button id="tab-porch" class="tab active">🏠 Porch</button>
+  <button id="tab-arcade" class="tab">🕹️ Arcade</button>
+</nav>
+
+<main>
+  <section id="view-porch" class="view active">
+    <div class="porch-layout">
+      <div class="porch-main">
+        <div class="porch-panel">
+          <h2>🏡 The Porch</h2>
+          <div id="placed-items" class="item-shelf"></div>
+          <p class="hint">Place treats and toys from your inventory to attract cats!</p>
+        </div>
+        <div class="porch-panel">
+          <h2>🐱 Visiting Cats <span id="cat-count" class="badge"></span></h2>
+          <div id="visiting-cats"></div>
+          <p class="hint">Pet a cat to earn +5 Neko Coins and grow your Catdex.</p>
+        </div>
+      </div>
+      <aside class="porch-side">
+        <div class="porch-panel">
+          <div class="panel-head">
+            <h2>🎒 Inventory</h2>
+            <button id="open-shop" class="btn-primary btn-sm">🛍️ Shop</button>
+          </div>
+          <div id="inventory" class="item-shelf"></div>
+        </div>
+        <div class="porch-panel">
+          <h2>📖 Catdex <span id="catdex-count" class="badge">0</span></h2>
+          <div id="catdex-list"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section id="view-arcade" class="view">
+    <div class="arcade-layout">
+      <div class="game-card">
+        <h2>🐾 Cat-Tac-Toe <span class="vs">vs</span> 🐟 Fish</h2>
+        <div id="ttt-status" class="stats">Your turn — you are Paw</div>
+        <div id="ttt-board" class="ttt-board"></div>
+        <button id="ttt-restart" class="btn-soft">Play Again</button>
+        <p class="hint">Win the round to earn +20 Neko Coins.</p>
+      </div>
+      <div class="game-card">
+        <h2>💧 Pac-Paws</h2>
+        <div class="stats">Coins: <span id="pp-coins">0</span> | Biscuits: <span id="pp-biscuits">0</span></div>
+        <canvas id="pacPawsCanvas" width="360" height="360"></canvas>
+        <p class="hint">Arrow Keys / WASD to move the cat, dodge the 💧 water drops, eat every 🍪. Clear the maze for a +50 bonus!</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="shop-modal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>🛍️ Neko Shop</h2>
+      <button id="close-shop" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <h3>🍪 Treats <span class="price-range">$10–$50</span></h3>
+      <div id="shop-treats" class="shop-grid"></div>
+      <h3>🧸 Toys <span class="price-range">$30–$100</span></h3>
+      <div id="shop-toys" class="shop-grid"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script type="module" src="js/game.js"></script>
+<script type="module" src="js/tic-tac-toe.js"></script>
+<script type="module" src="js/pac-paws.js"></script>
+</body>
+</html>
