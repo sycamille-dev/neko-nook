@@ -15,6 +15,7 @@
   </div>
   <div class="topbar-right">
     <div class="coin-counter">🪙 <span id="coin-count">0</span> Neko Coins</div>
+    <button id="toggle-mute" class="gear-btn" title="Mute audio">🔊</button>
     <button id="open-settings" class="gear-btn" title="Settings">⚙️</button>
   </div>
 </header>
@@ -26,33 +27,21 @@
 
 <main>
   <section id="view-porch" class="view active">
-    <div class="porch-layout">
-      <div class="porch-main">
-        <div class="porch-panel">
-          <h2>🏡 The Porch</h2>
-          <div id="placed-items" class="item-shelf"></div>
-          <p class="hint">Place treats and toys from your inventory to attract cats!</p>
-        </div>
-        <div class="porch-panel">
-          <h2>🐱 Visiting Cats <span id="cat-count" class="badge"></span></h2>
-          <div id="visiting-cats"></div>
-          <p class="hint">Pet a cat to earn +5 Neko Coins and grow your Catdex.</p>
-        </div>
-      </div>
-      <aside class="porch-side">
-        <div class="porch-panel">
-          <div class="panel-head">
-            <h2>🎒 Inventory</h2>
-            <button id="open-shop" class="btn-primary btn-sm">🛍️ Shop</button>
-          </div>
-          <div id="inventory" class="item-shelf"></div>
-        </div>
-        <div class="porch-panel">
-          <h2>📖 Catdex <span id="catdex-count" class="badge">0</span></h2>
-          <div id="catdex-list"></div>
-        </div>
-      </aside>
+    <div id="scene-container" class="scene-container"></div>
+    <div class="hud-top-left">
+      <button id="hud-shop" class="hud-btn">🛍️ Shop</button>
+      <button id="hud-cats" class="hud-btn">🐱 <span id="hud-cat-count">0</span></button>
     </div>
+    <div id="cat-chips" class="cat-chips"></div>
+    <div id="selection-bar" class="selection-bar hidden">
+      <img id="sel-avatar" class="cat-portrait" src="" alt="">
+      <span id="sel-name" class="sel-name"></span>
+      <button id="act-pet" class="btn-soft btn-sm">Pet 🖐 +5</button>
+      <button id="act-feed" class="btn-soft btn-sm">Feed 🍪 +10</button>
+      <button id="act-call" class="btn-soft btn-sm">Call 📣</button>
+      <button id="act-shoo" class="btn-soft btn-sm">Shoo 👋</button>
+    </div>
+    <div id="hud-hint" class="hud-hint">Click a cat to select it · click the ground to send it · scroll to zoom · drag to orbit</div>
   </section>
 
   <section id="view-arcade" class="view">
@@ -86,6 +75,24 @@
       <div id="shop-treats" class="shop-grid"></div>
       <h3>🧸 Toys <span class="price-range">$30–$100</span></h3>
       <div id="shop-toys" class="shop-grid"></div>
+      <h3>🎒 Inventory</h3>
+      <div id="inventory" class="item-shelf"></div>
+      <p class="hint">Bought items go here. Click Place to put them on the porch — cats love new things!</p>
+    </div>
+  </div>
+</div>
+
+<div id="cats-modal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>🐱 Cats</h2>
+      <button id="close-cats" class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <h3>Visiting now</h3>
+      <div id="visiting-cats"></div>
+      <h3>📖 Catdex <span id="catdex-count" class="badge">0</span></h3>
+      <div id="catdex-list"></div>
     </div>
   </div>
 </div>
@@ -105,6 +112,18 @@
       <h3>🧹 Danger Zone</h3>
       <button id="reset-progress" class="btn-danger">Reset All Progress</button>
     </div>
+  </div>
+</div>
+
+<div id="intro-overlay" class="intro-overlay">
+  <div class="intro-card">
+    <h1 class="intro-title">🐾 Neko Nook</h1>
+    <p class="intro-sub">a cozy little porch where the cats come to you</p>
+    <div class="intro-actions">
+      <button id="intro-start" class="btn-primary">▶ Welcome me in</button>
+      <button id="intro-skip" class="btn-soft">Skip intro</button>
+    </div>
+    <p class="hint intro-hint">🎧 best with sound on — music, meows and purrs await</p>
   </div>
 </div>
 

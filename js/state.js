@@ -9,8 +9,22 @@ const defaultState = {
   heroImage: 'assets/cat-hero.jpg',
   totalEarned: 0,
   tttRecord: { wins: 0, losses: 0, draws: 0 },
-  pacPawsBestStage: 1
+  pacPawsBestStage: 1,
+  muted: false
 };
+
+export const CAT_POOL = [
+  { name: 'Mochi', image: 'assets/cat-friend-1.jpg' },
+  { name: 'Biscuit', image: 'assets/cat-friend-2.jpg' },
+  { name: 'Pumpkin', image: 'assets/cat-friend-1.jpg' },
+  { name: 'Noodle', image: 'assets/cat-friend-2.jpg' },
+  { name: 'Suki', image: 'assets/cat-hero.jpg' },
+  { name: 'Tofu', image: 'assets/cat-friend-1.jpg' },
+  { name: 'Miso', image: 'assets/cat-friend-2.jpg' },
+  { name: 'Peach', image: 'assets/cat-hero.jpg' },
+  { name: 'Basil', image: 'assets/cat-friend-1.jpg' },
+  { name: 'Maple', image: 'assets/cat-friend-2.jpg' }
+];
 
 function loadState() {
   try {
@@ -53,6 +67,7 @@ export function addCoins(n) {
   gameState.totalEarned += n;
   saveState();
   updateCoinUI();
+  window.dispatchEvent(new CustomEvent('neko:coins-changed'));
 }
 
 export function spendCoins(n) {
@@ -60,6 +75,7 @@ export function spendCoins(n) {
   gameState.coins -= n;
   saveState();
   updateCoinUI();
+  window.dispatchEvent(new CustomEvent('neko:coins-changed'));
   return true;
 }
 

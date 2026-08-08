@@ -1,4 +1,14 @@
-import { gameState, saveState, addCoins, spendCoins, updateCoinUI, notify, SHOP_ITEMS } from './state.js';
+import { gameState, saveState, spendCoins, updateCoinUI, notify, SHOP_ITEMS } from './state.js';
+import { initAudio, resumeAudio, startMusic, setMuted, playPop } from './audio.js';
+import {
+  initScene,
+  beginIntro,
+  petCatByUid,
+  selectCatByUid,
+  placeItem,
+  getSelectedUid,
+  refreshSize
+} from './3d/scene.js';
 
 const tabButtons = {
   porch: document.getElementById('tab-porch'),
@@ -13,38 +23,12 @@ const views = {
 function switchTab(name) {
   Object.entries(tabButtons).forEach(([n, b]) => b.classList.toggle('active', n === name));
   Object.entries(views).forEach(([n, v]) => v.classList.toggle('active', n === name));
+  if (name === 'porch') refreshSize();
 }
 
 Object.entries(tabButtons).forEach(([name, btn]) => {
   btn.addEventListener('click', () => switchTab(name));
 });
-
-const CAT_POOL = [
-  { name: 'Mochi', image: 'assets/cat-friend-1.jpg' },
-  { name: 'Biscuit', image: 'assets/cat-friend-2.jpg' },
-  { name: 'Pumpkin', image: 'assets/cat-friend-1.jpg' },
-  { name: 'Noodle', image: 'assets/cat-friend-2.jpg' },
-  { name: 'Suki', image: 'assets/cat-hero.jpg' },
-  { name: 'Tofu', image: 'assets/cat-friend-1.jpg' },
-  { name: 'Miso', image: 'assets/cat-friend-2.jpg' },
-  { name: 'Peach', image: 'assets/cat-hero.jpg' },
-  { name: 'Basil', image: 'assets/cat-friend-1.jpg' },
-  { name: 'Maple', image: 'assets/cat-friend-2.jpg' }
-];
-
-let uidCounter = 0;
-
-function makeUid(prefix) {
-  uidCounter += 1;
-  return `${prefix}-${uidCounter}-${Date.now()}`;
-}
-
-function randomCat() {
-  const here = new Set(gameState.visitingCats.map((c) => c.name));
-  const pool = CAT_POOL.filter((c) => !here.has(c.name));
-  const pick = pool.length ? pool : CAT_POOL;
-  return { ...pick[Math.floor(Math.random() * pick.length)], uid: makeUid('cat') };
-}
 
 function renderShop() {
   const treats = document.getElementById('shop-treats');
@@ -69,40 +53,11 @@ function buyItem(kind, item) {
     notify('Not enough Neko Coins!');
     return;
   }
-  gameState.inventory[kind].push({ ...item, uid: makeUid('item') });
+  gameState.inventory[kind].push({ ...item, uid: `item-${Date.now()}-${Math.floor(Math.random() * 9999)}` });
   saveState();
   renderShop();
   renderInventory();
   notify(`Bought ${item.emoji} ${item.name}!`);
-}
-
-function findInventoryEntry(uid) {
-  for (const kind of ['food', 'toys']) {
-    const idx = gameState.inventory[kind].findIndex((i) => i.uid === uid);
-    if (idx >= 0) return { kind, idx };
-  }
-  return null;
-}
-
-function placeItem(uid) {
-  const entry = findInventoryEntry(uid);
-  if (!entry) return;
-  const [item] = gameState.inventory[entry.kind].splice(entry.idx, 1);
-  gameState.placedItems.push({ ...item, kind: entry.kind });
-  saveState();
-  renderInventory();
-  renderPlaced();
-  scheduleCatVisit();
-}
-
-function removePlaced(uid) {
-  const idx = gameState.placedItems.findIndex((i) => i.uid === uid);
-  if (idx < 0) return;
-  const [item] = gameState.placedItems.splice(idx, 1);
-  gameState.inventory[item.kind].push(item);
-  saveState();
-  renderInventory();
-  renderPlaced();
 }
 
 function renderInventory() {
@@ -110,7 +65,7 @@ function renderInventory() {
   const items = [...gameState.inventory.food, ...gameState.inventory.toys];
   el.innerHTML = items.length
     ? items.map(inventoryChip).join('')
-    : '<span class="empty-hint">Nothing here yet — open the shop to buy treats and toys!</span>';
+    : '<span class="empty-hint">Nothing here yet — buy treats and toys in the shop above!</span>';
 }
 
 function inventoryChip(item) {
@@ -122,25 +77,9 @@ function inventoryChip(item) {
     </div>`;
 }
 
-function renderPlaced() {
-  const el = document.getElementById('placed-items');
-  el.innerHTML = gameState.placedItems.length
-    ? gameState.placedItems.map(placedChip).join('')
-    : '<span class="empty-hint">✨ The porch is empty. Place items to attract cats!</span>';
-}
-
-function placedChip(item) {
-  return `
-    <div class="chip placed">
-      <span>${item.emoji}</span>
-      <span>${item.name}</span>
-      <button class="chip-btn" data-remove="${item.uid}" title="Put back in inventory">✕</button>
-    </div>`;
-}
-
 function renderCats() {
   const list = document.getElementById('visiting-cats');
-  const count = document.getElementById('cat-count');
+  const count = document.getElementById('hud-cat-count');
   count.textContent = gameState.visitingCats.length;
   list.innerHTML = gameState.visitingCats.length
     ? gameState.visitingCats.map(catCard).join('')
@@ -148,29 +87,13 @@ function renderCats() {
 }
 
 function catCard(cat) {
+  const selected = getSelectedUid() === cat.uid;
   return `
-    <div class="cat-card">
+    <div class="cat-card ${selected ? 'cat-card-selected' : ''}" data-cat="${cat.uid}">
       <img class="cat-portrait" src="${cat.image}" alt="${cat.name}">
       <span class="cat-name">${cat.name}</span>
-      <button class="btn-soft btn-sm" data-pet="${cat.uid}">Pet 🖐</button>
+      <button class="btn-soft btn-sm" data-pet="${cat.uid}">Pet 🖐 +5</button>
     </div>`;
-}
-
-function petCat(uid) {
-  const idx = gameState.visitingCats.findIndex((c) => c.uid === uid);
-  if (idx < 0) return;
-  const [cat] = gameState.visitingCats.splice(idx, 1);
-  const known = gameState.catdex.some((c) => c.name === cat.name);
-  if (!known) {
-    gameState.catdex.push({ name: cat.name, image: cat.image });
-    notify(`${cat.name} joined your Catdex! +5 Neko Coins`);
-  } else {
-    notify(`You petted ${cat.name}! +5 Neko Coins`);
-  }
-  addCoins(5);
-  saveState();
-  renderCats();
-  renderCatdex();
 }
 
 function renderCatdex() {
@@ -184,17 +107,74 @@ function renderCatdex() {
     : '<span class="empty-hint">No cats in your Catdex yet. Pet your visitors!</span>';
 }
 
-function scheduleCatVisit() {
-  const delay = 2500 + Math.random() * 3500;
-  setTimeout(() => {
-    if (gameState.visitingCats.length >= 5) return;
-    const cat = randomCat();
-    gameState.visitingCats.push(cat);
-    saveState();
-    renderCats();
-    notify(`😻 ${cat.name} wandered onto the porch!`);
-  }, delay);
+function renderChips() {
+  const el = document.getElementById('cat-chips');
+  const selected = getSelectedUid();
+  el.innerHTML = gameState.visitingCats
+    .map(
+      (c) => `
+      <button class="chip-portrait ${c.uid === selected ? 'chip-selected' : ''}" data-chip="${c.uid}" title="${c.name}">
+        <img src="${c.image}" alt="${c.name}">
+      </button>`
+    )
+    .join('');
 }
+
+function openModal(id) {
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+document.getElementById('hud-shop').addEventListener('click', () => {
+  renderShop();
+  renderInventory();
+  openModal('shop-modal');
+});
+document.getElementById('close-shop').addEventListener('click', () => closeModal('shop-modal'));
+document.getElementById('hud-cats').addEventListener('click', () => {
+  renderCats();
+  renderCatdex();
+  openModal('cats-modal');
+});
+document.getElementById('close-cats').addEventListener('click', () => closeModal('cats-modal'));
+
+document.getElementById('shop-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'shop-modal') closeModal('shop-modal');
+  const btn = e.target.closest('[data-buy]');
+  if (!btn) return;
+  const [kind, id] = btn.dataset.buy.split(':');
+  const item = SHOP_ITEMS[kind].find((i) => i.id === id);
+  if (item) buyItem(kind, item);
+  const placeBtn = e.target.closest('[data-place]');
+  if (placeBtn) {
+    placeItem(placeBtn.dataset.place);
+    renderInventory();
+  }
+});
+
+document.getElementById('cats-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'cats-modal') closeModal('cats-modal');
+  const card = e.target.closest('[data-cat]');
+  if (card) {
+    selectCatByUid(card.dataset.cat);
+    closeModal('cats-modal');
+    return;
+  }
+  const petBtn = e.target.closest('[data-pet]');
+  if (petBtn) {
+    petCatByUid(petBtn.dataset.pet);
+    renderCats();
+    renderCatdex();
+  }
+});
+
+document.getElementById('cat-chips').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-chip]');
+  if (btn) selectCatByUid(btn.dataset.chip);
+});
 
 const HERO_OPTIONS = [
   'assets/cat-hero.jpg',
@@ -231,11 +211,11 @@ function renderStatsLine() {
 function openSettings() {
   renderHeroSelect();
   renderStatsLine();
-  document.getElementById('settings-modal').classList.remove('hidden');
+  openModal('settings-modal');
 }
 
 function closeSettings() {
-  document.getElementById('settings-modal').classList.add('hidden');
+  closeModal('settings-modal');
 }
 
 document.getElementById('open-settings').addEventListener('click', openSettings);
@@ -261,56 +241,62 @@ document.getElementById('reset-progress').addEventListener('click', () => {
   }
 });
 
+const muteBtn = document.getElementById('toggle-mute');
+
+function updateMuteUI() {
+  muteBtn.textContent = gameState.muted ? '🔇' : '🔊';
+}
+
+muteBtn.addEventListener('click', () => {
+  initAudio();
+  gameState.muted = !gameState.muted;
+  setMuted(gameState.muted);
+  saveState();
+  updateMuteUI();
+  if (!gameState.muted) playPop();
+});
+
+const introOverlay = document.getElementById('intro-overlay');
+
+function hideIntro() {
+  introOverlay.classList.add('intro-hidden');
+}
+
+function startGame(skip) {
+  initAudio();
+  resumeAudio();
+  startMusic();
+  beginIntro(skip);
+  hideIntro();
+  playPop();
+}
+
+document.getElementById('intro-start').addEventListener('click', () => startGame(false));
+document.getElementById('intro-skip').addEventListener('click', () => startGame(true));
+
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    closeShop();
+    closeModal('shop-modal');
+    closeModal('cats-modal');
     closeSettings();
   }
 });
 
-updateCoinUI();
-updateTopbarAvatar();
-renderInventory();
-
-function openShop() {
-  renderShop();
-  document.getElementById('shop-modal').classList.remove('hidden');
-}
-
-function closeShop() {
-  document.getElementById('shop-modal').classList.add('hidden');
-}
-
-document.getElementById('open-shop').addEventListener('click', openShop);
-document.getElementById('close-shop').addEventListener('click', closeShop);
-
-document.getElementById('shop-modal').addEventListener('click', (e) => {
-  if (e.target.id === 'shop-modal') closeShop();
-  const btn = e.target.closest('[data-buy]');
-  if (!btn) return;
-  const [kind, id] = btn.dataset.buy.split(':');
-  const item = SHOP_ITEMS[kind].find((i) => i.id === id);
-  if (item) buyItem(kind, item);
+window.addEventListener('neko:cats-changed', () => {
+  renderCats();
+  renderCatdex();
+  renderChips();
 });
-
-document.getElementById('view-porch').addEventListener('click', (e) => {
-  const placeBtn = e.target.closest('[data-place]');
-  if (placeBtn) {
-    placeItem(placeBtn.dataset.place);
-    return;
-  }
-  const removeBtn = e.target.closest('[data-remove]');
-  if (removeBtn) {
-    removePlaced(removeBtn.dataset.remove);
-    return;
-  }
-  const petBtn = e.target.closest('[data-pet]');
-  if (petBtn) petCat(petBtn.dataset.pet);
-});
+window.addEventListener('neko:inventory-changed', () => renderInventory());
+window.addEventListener('neko:coins-changed', () => renderShop());
+window.addEventListener('neko:selected-changed', () => renderChips());
 
 updateCoinUI();
 updateTopbarAvatar();
+updateMuteUI();
+renderShop();
 renderInventory();
-renderPlaced();
 renderCats();
 renderCatdex();
+renderChips();
+initScene();
