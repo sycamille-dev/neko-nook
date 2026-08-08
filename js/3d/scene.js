@@ -2,26 +2,40 @@ import * as THREE from 'three';
 import { gameState, saveState, addCoins, notify, CAT_POOL } from '../state.js';
 import { playMeow, playPurr, playHappy, playEat, playPop, playBird, resumeAudio } from '../audio.js';
 import { buildWorld } from './world.js';
+import { buildInterior, setCutaway } from './interior.js';
 import { Cat3D } from './cats.js';
 import { makeItemMesh } from './items3d.js';
 
 const container = document.getElementById('scene-container');
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-container.appendChild(renderer.domElement);
-
-const scene = new THREE.Scene();
-const { ground } = buildWorld(scene);
-
-const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
+let threeReady = false;
+let renderer = null;
+let scene = null;
+let camera = null;
+let ground = null;
+let dom = null;
+let exteriorGroup = null;
+let doorGroup = null;
+let doorPivot = null;
+let interiorGroup = null;
+let insideMode = false;
 
 const camTarget = new THREE.Vector3(0, 1.2, 0);
 let camRadius = 12;
 let camTheta = 0.7;
 let camPhi = 1.1;
+
+const transition = {
+  active: false,
+  t0: 0,
+  duration: 2200,
+  entering: true,
+  fromPos: null,
+  midPos: null,
+  toPos: null,
+  fromTarget: null,
+  toTarget: null
+};
 
 function clampTarget() {
   camTarget.x = THREE.MathUtils.clamp(camTarget.x, -25, 25);
@@ -40,8 +54,6 @@ function applyCamera() {
   camera.position.copy(defaultCamPos());
   camera.lookAt(camTarget);
 }
-
-applyCamera();
 
 const cats = new Map();
 const catRoots = [];
@@ -81,7 +93,19 @@ function edgePoint() {
 }
 
 function randomPorchPoint() {
+  if (insideMode) {
+    return { x: (Math.random() - 0.5) * 6.2, z: -2.1 - Math.random() * 3.6 };
+  }
   return { x: (Math.random() - 0.5) * 6, z: (Math.random() - 0.5) * 3 + 0.6 };
+}
+
+function randomArrivalPoint() {
+  if (insideMode) {
+    return { x: (Math.random() - 0.5) * 2.5, z: 0.6 };
+  }
+  const a = Math.random() * Math.PI * 2;
+  const r = 13 + Math.random() * 3;
+  return { x: Math.cos(a) * r, z: 0.5 + Math.sin(a) * r };
 }
 
 function spawnCat(entry = null) {
@@ -90,7 +114,7 @@ function spawnCat(entry = null) {
   e.uid = e.uid || makeUid();
   const existing = gameState.visitingCats.some((c) => c.uid === e.uid);
   const cat = new Cat3D(e);
-  const spawn = edgePoint();
+  const spawn = randomArrivalPoint();
   const dest = randomPorchPoint();
   cat.root.position.set(spawn.x, 0, spawn.z);
   cat.arrive(dest.x, dest.z);
@@ -123,11 +147,16 @@ function removeCat(uid) {
 
 function startLeave(cat) {
   cat.pinned = false;
-  const p = edgePoint();
+  const p = randomArrivalPoint();
   cat.leave(p.x, p.z);
 }
 
 function wander(cat) {
+  if (insideMode) {
+    const p = randomPorchPoint();
+    cat.walkTo(p.x, p.z);
+    return;
+  }
   const toys = [];
   itemMeshes.forEach((m) => {
     if (m.userData.isToy) toys.push(m.position);
@@ -158,6 +187,7 @@ function selectCat(uid) {
 }
 
 export function deselect() {
+  if (!threeReady) return;
   if (selectedUid) {
     const cat = cats.get(selectedUid);
     if (cat) {
@@ -171,14 +201,15 @@ export function deselect() {
 }
 
 export function getSelectedUid() {
-  return selectedUid;
+  return threeReady ? selectedUid : null;
 }
 
 export function selectCatByUid(uid) {
-  if (cats.has(uid)) selectCat(uid);
+  if (threeReady && cats.has(uid)) selectCat(uid);
 }
 
 export function petCatByUid(uid) {
+  if (!threeReady) return;
   const cat = cats.get(uid);
   const entry = gameState.visitingCats.find((c) => c.uid === uid);
   if (!cat || !entry) return;
@@ -201,6 +232,7 @@ export function petCatByUid(uid) {
 }
 
 export function feedCatByUid(uid) {
+  if (!threeReady) return;
   if (!gameState.inventory.food.length) {
     notify('No treats in inventory — buy some in the shop!');
     return;
@@ -221,6 +253,7 @@ export function feedCatByUid(uid) {
 }
 
 export function shooCat(uid) {
+  if (!threeReady) return;
   const cat = cats.get(uid);
   if (!cat) return;
   startLeave(cat);
@@ -271,6 +304,7 @@ function findInventoryEntry(uid) {
 }
 
 export function placeItem(uid) {
+  if (!threeReady) return;
   const entry = findInventoryEntry(uid);
   if (!entry) return;
   const [item] = gameState.inventory[entry.kind].splice(entry.idx, 1);
@@ -299,6 +333,7 @@ export function placeItem(uid) {
 }
 
 export function removePlaced(uid) {
+  if (!threeReady) return;
   const idx = gameState.placedItems.findIndex((i) => i.uid === uid);
   if (idx < 0) return;
   const [item] = gameState.placedItems.splice(idx, 1);
@@ -498,6 +533,7 @@ function updateIntro(now) {
 }
 
 export function beginIntro(skip = false) {
+  if (!threeReady) return;
   intro.active = true;
   intro.t0 = performance.now();
   intro.duration = skip ? 1500 : 4200;
@@ -505,13 +541,116 @@ export function beginIntro(skip = false) {
   spawnCat();
 }
 
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function quadBezier(p0, p1, p2, t) {
+  const u = 1 - t;
+  return new THREE.Vector3(
+    u * u * p0.x + 2 * u * t * p1.x + t * t * p2.x,
+    u * u * p0.y + 2 * u * t * p1.y + t * t * p2.y,
+    u * u * p0.z + 2 * u * t * p1.z + t * t * p2.z
+  );
+}
+
+const INSIDE_POS = new THREE.Vector3(1.4, 3.9, -5.3);
+const INSIDE_TARGET = new THREE.Vector3(0, 0.5, -3.8);
+const OUTSIDE_POS = new THREE.Vector3(6.89, 6.64, 8.68);
+const OUTSIDE_TARGET = new THREE.Vector3(0, 1.2, 0);
+const DOOR_WAY = new THREE.Vector3(0.2, 1.15, -2.1);
+
+function toggleHouse() {
+  if (transition.active || !threeReady) return;
+  const entering = !insideMode;
+  transition.active = true;
+  transition.entering = entering;
+  transition.t0 = performance.now();
+  transition.duration = 2200;
+  transition.fromPos = camera.position.clone();
+  transition.fromTarget = camTarget.clone();
+  transition.midPos = DOOR_WAY;
+  transition.toPos = entering ? INSIDE_POS : OUTSIDE_POS;
+  transition.toTarget = entering ? INSIDE_TARGET.clone() : OUTSIDE_TARGET.clone();
+  playPop();
+}
+
+function updateTransition(now) {
+  if (!transition.active) return;
+  const p = Math.min(1, (now - transition.t0) / transition.duration);
+  const e = easeInOutCubic(p);
+  camera.position.copy(quadBezier(transition.fromPos, transition.midPos, transition.toPos, e));
+  const target = new THREE.Vector3().lerpVectors(transition.fromTarget, transition.toTarget, e);
+  camera.lookAt(target);
+
+  const open = transition.entering ? 1.9 : -1.9;
+  doorPivot.rotation.y = (transition.entering ? e : 1 - e) * open;
+
+  if (p >= 1) {
+    transition.active = false;
+    insideMode = transition.entering;
+    exteriorGroup.visible = !insideMode;
+    interiorGroup.visible = insideMode;
+    doorPivot.rotation.y = 0;
+    camTarget.copy(transition.toTarget);
+    camRadius = insideMode ? 4.0 : 12;
+    camPhi = insideMode ? 0.55 : 1.1;
+    camTheta = insideMode ? 2.4 : 0.7;
+    updateHint();
+    if (insideMode) notify('🏠 Welcome home!');
+    else notify('🌤️ Back out on the porch!');
+    playPop();
+    const selected = selectedUid ? cats.get(selectedUid) : null;
+    if (selected) {
+      const dest = insideMode ? { x: 0.4, z: -3.2 } : { x: 0, z: 0.8 };
+      selected.playGoal = null;
+      selected.walkTo(dest.x, dest.z);
+    }
+  }
+}
+
+function maxInsideRadius() {
+  const rx = 3.3 - Math.abs(camTarget.x);
+  const rzF = -1.7 - camTarget.z;
+  const rzB = -5.95 - camTarget.z;
+  const horiz = Math.min(rx, rzF, rzB);
+  return Math.max(1.2, horiz / Math.max(Math.sin(camPhi), 0.3));
+}
+
+function updateHint() {
+  const el = document.getElementById('hud-hint');
+  if (!el) return;
+  el.textContent = insideMode
+    ? 'Click the door 🚪 to step back outside · click a cat to pet it'
+    : 'Click the door 🚪 to go inside · click a cat to select it · click the ground to send it';
+}
+
+let cutaway = 0;
+
+function updateCutaway(dt) {
+  let t = 0;
+  if (insideMode) {
+    const y = camera.position.y;
+    t = y > 2.75 ? 1 : y > 2.2 ? (y - 2.2) / 0.55 : 0;
+  }
+  cutaway = THREE.MathUtils.damp(cutaway, t, 6, dt);
+  setCutaway(cutaway);
+}
+
 function updateCamera(dt) {
+  if (transition.active) return;
   if (!intro.active) {
     if (selectedUid && cats.has(selectedUid)) {
       const c = cats.get(selectedUid);
       camTarget.lerp(new THREE.Vector3(c.root.position.x, 1.2, c.root.position.z), 0.06);
     } else {
       camTarget.lerp(new THREE.Vector3(0, 1.2, 0), 0.015);
+    }
+    if (insideMode) {
+      camTarget.x = THREE.MathUtils.clamp(camTarget.x, -2.8, 2.8);
+      camTarget.z = THREE.MathUtils.clamp(camTarget.z, -5.7, -2.4);
+      camRadius = THREE.MathUtils.clamp(camRadius, 1.5, maxInsideRadius());
+      camPhi = THREE.MathUtils.clamp(camPhi, 0.4, 1.32);
     }
     clampTarget();
     applyCamera();
@@ -522,9 +661,16 @@ const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 
 function handleClick(e) {
+  if (transition.active) return;
   const rect = container.getBoundingClientRect();
   ndc.set(((e.clientX - rect.left) / rect.width) * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
   raycaster.setFromCamera(ndc, camera);
+
+  const doorHits = raycaster.intersectObjects([doorGroup], true);
+  if (doorHits.length) {
+    toggleHouse();
+    return;
+  }
 
   const itemHits = raycaster.intersectObjects([...itemMeshes.values()], true);
   if (itemHits.length) {
@@ -568,56 +714,69 @@ let lastX = 0;
 let lastY = 0;
 let moved = 0;
 
-const dom = renderer.domElement;
+function registerListeners() {
+  dom.addEventListener('pointerdown', (e) => {
+    if (transition.active) return;
+    dragging = true;
+    dragMode = e.button === 0 ? 0 : 1;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    moved = 0;
+    dom.setPointerCapture(e.pointerId);
+  });
 
-dom.addEventListener('pointerdown', (e) => {
-  dragging = true;
-  dragMode = e.button === 0 ? 0 : 1;
-  lastX = e.clientX;
-  lastY = e.clientY;
-  moved = 0;
-  dom.setPointerCapture(e.pointerId);
-});
+  dom.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    moved += Math.abs(dx) + Math.abs(dy);
+    if (dragMode === 0) {
+      camTheta -= dx * 0.005;
+      camPhi = THREE.MathUtils.clamp(camPhi - dy * 0.004, 0.25, 1.4);
+    } else {
+      const fwd = new THREE.Vector3().subVectors(camTarget, camera.position).setY(0).normalize();
+      const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
+      const scale = camRadius * 0.0012;
+      camTarget.addScaledVector(fwd, -dy * scale);
+      camTarget.addScaledVector(right, -dx * scale);
+      clampTarget();
+    }
+    if (insideMode) {
+      camRadius = THREE.MathUtils.clamp(camRadius, 1.5, maxInsideRadius());
+      camPhi = THREE.MathUtils.clamp(camPhi, 0.4, 1.32);
+      camTarget.x = THREE.MathUtils.clamp(camTarget.x, -2.8, 2.8);
+      camTarget.z = THREE.MathUtils.clamp(camTarget.z, -5.7, -2.4);
+    }
+  });
 
-dom.addEventListener('pointermove', (e) => {
-  if (!dragging) return;
-  const dx = e.clientX - lastX;
-  const dy = e.clientY - lastY;
-  lastX = e.clientX;
-  lastY = e.clientY;
-  moved += Math.abs(dx) + Math.abs(dy);
-  if (dragMode === 0) {
-    camTheta -= dx * 0.005;
-    camPhi = THREE.MathUtils.clamp(camPhi - dy * 0.004, 0.25, 1.4);
-  } else {
-    const fwd = new THREE.Vector3().subVectors(camTarget, camera.position).setY(0).normalize();
-    const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
-    const scale = camRadius * 0.0012;
-    camTarget.addScaledVector(fwd, -dy * scale);
-    camTarget.addScaledVector(right, -dx * scale);
-    clampTarget();
-  }
-});
+  dom.addEventListener('pointerup', (e) => {
+    dragging = false;
+    if (moved < 6) handleClick(e);
+  });
 
-dom.addEventListener('pointerup', (e) => {
-  dragging = false;
-  if (moved < 6) handleClick(e);
-});
+  dom.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    camRadius = camRadius * Math.exp(e.deltaY * 0.0012);
+    if (insideMode) {
+      camRadius = THREE.MathUtils.clamp(camRadius, 1.5, maxInsideRadius());
+    } else {
+      camRadius = THREE.MathUtils.clamp(camRadius, 5, 30);
+    }
+  }, { passive: false });
 
-dom.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  camRadius = THREE.MathUtils.clamp(camRadius * Math.exp(e.deltaY * 0.0012), 5, 30);
-}, { passive: false });
+  dom.addEventListener('contextmenu', (e) => e.preventDefault());
 
-dom.addEventListener('contextmenu', (e) => e.preventDefault());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') deselect();
+  });
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') deselect();
-});
-
-window.addEventListener('resize', resize);
+  window.addEventListener('resize', resize);
+}
 
 export function refreshSize() {
+  if (!threeReady) return;
   resize();
 }
 
@@ -640,31 +799,64 @@ function animate(now) {
   last = now;
 
   updateIntro(now);
+  updateTransition(now);
   updateCats(dt);
   updateItems(now / 1000);
   updateFloats(dt);
   updateAmbient(dt);
   updateCamera(dt);
+  updateCutaway(dt);
 
   if (container.offsetParent !== null) renderer.render(scene, camera);
 }
 
 export function initScene() {
-  resize();
-  gameState.visitingCats.forEach((entry) => {
-    const cat = spawnCat(entry);
-    if (cat) cat.pinned = false;
-  });
-  gameState.placedItems.forEach((item) => {
-    const mesh = makeItemMesh(item);
-    mesh.position.set(item.x ?? (Math.random() - 0.5) * 5.5, 0.32, item.z ?? 0.6);
-    mesh.traverse((o) => {
-      o.castShadow = true;
+  if (threeReady) return;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+    dom = renderer.domElement;
+
+    scene = new THREE.Scene();
+    const world = buildWorld(scene);
+    ground = world.ground;
+    exteriorGroup = world.exterior;
+    doorGroup = world.doorGroup;
+    doorPivot = world.doorPivot;
+
+    interiorGroup = buildInterior();
+    interiorGroup.visible = false;
+    scene.add(interiorGroup);
+
+    camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
+    applyCamera();
+    updateHint();
+
+    threeReady = true;
+    registerListeners();
+
+    resize();
+    gameState.visitingCats.forEach((entry) => {
+      const cat = spawnCat(entry);
+      if (cat) cat.pinned = false;
     });
-    scene.add(mesh);
-    itemMeshes.set(item.uid, mesh);
-  });
-  spawnCat();
-  spawnCat();
-  requestAnimationFrame(animate);
+    gameState.placedItems.forEach((item) => {
+      const mesh = makeItemMesh(item);
+      mesh.position.set(item.x ?? (Math.random() - 0.5) * 5.5, 0.32, item.z ?? 0.6);
+      mesh.traverse((o) => {
+        o.castShadow = true;
+      });
+      scene.add(mesh);
+      itemMeshes.set(item.uid, mesh);
+    });
+    spawnCat();
+    spawnCat();
+    requestAnimationFrame(animate);
+  } catch (err) {
+    console.error('3D failed to start:', err);
+    notify(`⚠️ 3D failed to start: ${err.message}`);
+  }
 }

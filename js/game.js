@@ -143,11 +143,13 @@ document.getElementById('close-cats').addEventListener('click', () => closeModal
 
 document.getElementById('shop-modal').addEventListener('click', (e) => {
   if (e.target.id === 'shop-modal') closeModal('shop-modal');
-  const btn = e.target.closest('[data-buy]');
-  if (!btn) return;
-  const [kind, id] = btn.dataset.buy.split(':');
-  const item = SHOP_ITEMS[kind].find((i) => i.id === id);
-  if (item) buyItem(kind, item);
+  const buyBtn = e.target.closest('[data-buy]');
+  if (buyBtn) {
+    const [kind, id] = buyBtn.dataset.buy.split(':');
+    const item = SHOP_ITEMS[kind].find((i) => i.id === id);
+    if (item) buyItem(kind, item);
+    return;
+  }
   const placeBtn = e.target.closest('[data-place]');
   if (placeBtn) {
     placeItem(placeBtn.dataset.place);
@@ -263,16 +265,32 @@ function hideIntro() {
 }
 
 function startGame(skip) {
-  initAudio();
-  resumeAudio();
-  startMusic();
-  beginIntro(skip);
   hideIntro();
-  playPop();
+  try {
+    initAudio();
+    resumeAudio();
+    startMusic();
+    beginIntro(skip);
+    playPop();
+  } catch (err) {
+    console.error('Startup failed:', err);
+    notify('⚠️ Something went wrong starting the game');
+  }
 }
 
 document.getElementById('intro-start').addEventListener('click', () => startGame(false));
 document.getElementById('intro-skip').addEventListener('click', () => startGame(true));
+
+window.addEventListener('error', (e) => {
+  console.error('Uncaught error:', e.error || e.message);
+  if (!introOverlay.classList.contains('intro-hidden')) {
+    notify(`⚠️ ${e.message || 'Unexpected error'}`);
+  }
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+  console.error('Unhandled rejection:', e.reason);
+});
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -299,4 +317,8 @@ renderInventory();
 renderCats();
 renderCatdex();
 renderChips();
-initScene();
+try {
+  initScene();
+} catch (err) {
+  console.error('initScene failed:', err);
+}

@@ -1,24 +1,13 @@
+import musicUrl from '../assets/music/abdipr-neko-komorebi-chill-lo-fi-266788.mp3';
+
 let ctx = null;
 let master = null;
 let musicGain = null;
 let sfxGain = null;
 let muted = false;
 let musicOn = false;
-let schedulerTimer = null;
-let nextNoteTime = 0;
-let barIndex = 0;
 let noiseBuffer = null;
-
-const BPM = 72;
-const BEAT = 60 / BPM;
-const BAR = BEAT * 4;
-
-const CHORDS = [
-  [261.63, 329.63, 392.0, 493.88],
-  [220.0, 261.63, 329.63, 392.0],
-  [174.61, 220.0, 261.63, 329.63],
-  [196.0, 246.94, 293.66, 392.0]
-];
+let musicEl = null;
 
 export function initAudio() {
   if (ctx) return;
@@ -32,7 +21,7 @@ export function initAudio() {
   master.connect(ctx.destination);
 
   musicGain = ctx.createGain();
-  musicGain.gain.value = 0.12;
+  musicGain.gain.value = 0.5;
   musicGain.connect(master);
 
   sfxGain = ctx.createGain();
@@ -252,133 +241,21 @@ export function playBird() {
 }
 
 export function startMusic() {
-  if (!ctx || musicOn) return;
+  if (musicOn) return;
   musicOn = true;
-  nextNoteTime = ctx.currentTime + 0.1;
-  barIndex = 0;
-  schedulerTimer = setInterval(scheduleAhead, 90);
-  scheduleAhead();
+  if (!ctx) return;
+  musicEl = new Audio(musicUrl);
+  musicEl.loop = true;
+  musicEl.volume = 0.5;
+  const src = ctx.createMediaElementSource(musicEl);
+  src.connect(musicGain);
+  musicEl.play().catch(() => {});
 }
 
 export function stopMusic() {
   musicOn = false;
-  clearInterval(schedulerTimer);
-  schedulerTimer = null;
-}
-
-function scheduleAhead() {
-  if (!ctx) return;
-  while (nextNoteTime < ctx.currentTime + 0.3) {
-    scheduleBar(barIndex % CHORDS.length, nextNoteTime);
-    barIndex += 1;
-    nextNoteTime += BAR;
+  if (musicEl) {
+    musicEl.pause();
+    musicEl = null;
   }
-}
-
-function scheduleBar(bar, t) {
-  const chord = CHORDS[bar];
-  const low = chord[0] / 2;
-
-  pad(low, t, BAR);
-  chord.forEach((freq) => pad(freq, t, BAR));
-
-  const beatCount = 4;
-  for (let b = 0; b < beatCount; b++) {
-    const bt = t + b * BEAT;
-    if (b % 2 === 0) kick(bt);
-    if (b === 1 || b === 3) snare(bt);
-    for (let s = 0; s < 2; s++) {
-      hat(bt + s * (BEAT / 2));
-    }
-  }
-
-  const notes = [...chord, chord[1] * 2];
-  for (let s = 0; s < 8; s++) {
-    const freq = notes[s % notes.length];
-    pluck(freq * 2, t + s * (BEAT / 2));
-  }
-}
-
-function pad(freq, t, dur) {
-  [0, 5].forEach((det) => {
-    const osc = ctx.createOscillator();
-    osc.type = 'triangle';
-    osc.frequency.value = freq;
-    osc.detune.value = det;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(0.035, t + 0.9);
-    g.gain.setValueAtTime(0.035, t + dur - 1.4);
-    g.gain.linearRampToValueAtTime(0.0001, t + dur + 0.2);
-    const f = ctx.createBiquadFilter();
-    f.type = 'lowpass';
-    f.frequency.value = 900;
-    osc.connect(f);
-    f.connect(g);
-    g.connect(musicGain);
-    osc.start(t);
-    osc.stop(t + dur + 0.3);
-  });
-}
-
-function pluck(freq, t) {
-  const osc = ctx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.value = freq;
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.045, t + 0.01);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
-  osc.connect(g);
-  g.connect(musicGain);
-  osc.start(t);
-  osc.stop(t + 0.35);
-}
-
-function kick(t) {
-  const osc = ctx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(120, t);
-  osc.frequency.exponentialRampToValueAtTime(45, t + 0.12);
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.16, t + 0.005);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
-  osc.connect(g);
-  g.connect(musicGain);
-  osc.start(t);
-  osc.stop(t + 0.2);
-}
-
-function snare(t) {
-  const src = noiseSource();
-  const f = ctx.createBiquadFilter();
-  f.type = 'bandpass';
-  f.frequency.value = 1800;
-  f.Q.value = 0.8;
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.06, t + 0.005);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
-  src.connect(f);
-  f.connect(g);
-  g.connect(musicGain);
-  src.start(t);
-  src.stop(t + 0.16);
-}
-
-function hat(t) {
-  const src = noiseSource();
-  const f = ctx.createBiquadFilter();
-  f.type = 'highpass';
-  f.frequency.value = 6500;
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(0.035, t + 0.003);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
-  src.connect(f);
-  f.connect(g);
-  g.connect(musicGain);
-  src.start(t);
-  src.stop(t + 0.06);
 }

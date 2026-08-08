@@ -7,6 +7,8 @@ function mat(color, opts = {}) {
 }
 
 export function buildWorld(scene) {
+  const exterior = new THREE.Group();
+
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(90, 90),
     mat(0xaed9a8)
@@ -24,7 +26,7 @@ export function buildWorld(scene) {
   lightGrass.rotation.x = -Math.PI / 2;
   lightGrass.position.y = 0.01;
   lightGrass.receiveShadow = true;
-  scene.add(lightGrass);
+  exterior.add(lightGrass);
 
   const deck = new THREE.Mesh(
     new THREE.BoxGeometry(11, 0.32, 7),
@@ -33,7 +35,7 @@ export function buildWorld(scene) {
   deck.position.set(0, 0.16, 0.5);
   deck.receiveShadow = true;
   deck.castShadow = true;
-  scene.add(deck);
+  exterior.add(deck);
 
   const step = new THREE.Mesh(
     new THREE.BoxGeometry(3, 0.18, 1.1),
@@ -41,7 +43,7 @@ export function buildWorld(scene) {
   );
   step.position.set(0, 0.09, 3.9);
   step.receiveShadow = true;
-  scene.add(step);
+  exterior.add(step);
 
   for (const [x, z] of [[-5.2, 0.5], [5.2, 0.5], [-5.2, 4.1], [5.2, 4.1]]) {
     const post = new THREE.Mesh(
@@ -50,7 +52,7 @@ export function buildWorld(scene) {
     );
     post.position.set(x, 0.55, z);
     post.castShadow = true;
-    scene.add(post);
+    exterior.add(post);
   }
 
   for (const [x, z, len] of [[0, 4.1, 8.8], [0, -2.6, 11]]) {
@@ -60,7 +62,7 @@ export function buildWorld(scene) {
     );
     rail.position.set(x, 1.0, z);
     rail.castShadow = true;
-    scene.add(rail);
+    exterior.add(rail);
   }
 
   const house = new THREE.Mesh(
@@ -70,7 +72,7 @@ export function buildWorld(scene) {
   house.position.set(0, 1.6, -3.8);
   house.castShadow = true;
   house.receiveShadow = true;
-  scene.add(house);
+  exterior.add(house);
 
   const roof = new THREE.Mesh(
     new THREE.ConeGeometry(5.1, 2.2, 4),
@@ -79,21 +81,7 @@ export function buildWorld(scene) {
   roof.position.set(0, 4.3, -3.8);
   roof.rotation.y = Math.PI / 4;
   roof.castShadow = true;
-  scene.add(roof);
-
-  const door = new THREE.Mesh(
-    new THREE.BoxGeometry(1.3, 2.2, 0.15),
-    mat(0x8a5a3b)
-  );
-  door.position.set(0, 1.1, -1.48);
-  scene.add(door);
-
-  const knob = new THREE.Mesh(
-    new THREE.SphereGeometry(0.06, 8, 8),
-    mat(0xf5d76e)
-  );
-  knob.position.set(0.5, 1.0, -1.4);
-  scene.add(knob);
+  exterior.add(roof);
 
   for (const [x, w] of [[-2.4, 1.1], [2.4, 1.1]]) {
     const win = new THREE.Mesh(
@@ -101,45 +89,44 @@ export function buildWorld(scene) {
       mat(0xbfe8ff)
     );
     win.position.set(x, 2.2, -1.48);
-    scene.add(win);
+    exterior.add(win);
     const frame = new THREE.Mesh(
       new THREE.BoxGeometry(w + 0.2, 0.12, 0.08),
       mat(0xffffff)
     );
     frame.position.set(x, 2.2, -1.41);
-    scene.add(frame);
+    exterior.add(frame);
   }
 
-  const fenceMat = mat(0xfff0d4);
   const fenceColors = [0xffd6c2, 0xc2e8ff, 0xfff1c2, 0xd9c2ff];
   for (let i = 0; i < 8; i++) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.0, 0.16), mat(fenceColors[i % 4]));
     post.position.set(-6.6 + i * 1.6, 0.5, 5.6);
     post.castShadow = true;
-    scene.add(post);
+    exterior.add(post);
   }
   for (let i = 0; i < 6; i++) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.0, 0.16), mat(fenceColors[i % 4]));
     post.position.set(-7.9, 0.5, 3.8 - i * 1.2);
     post.castShadow = true;
-    scene.add(post);
+    exterior.add(post);
   }
   for (let i = 0; i < 6; i++) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.0, 0.16), mat(fenceColors[i % 4]));
     post.position.set(7.9, 0.5, 3.8 - i * 1.2);
     post.castShadow = true;
-    scene.add(post);
+    exterior.add(post);
   }
 
-  const railTop = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.1, 0.1), fenceMat);
+  const railTop = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.1, 0.1), mat(0xfff0d4));
   railTop.position.set(0, 1.05, 5.6);
-  scene.add(railTop);
-  const railLeft = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 6.8), fenceMat);
+  exterior.add(railTop);
+  const railLeft = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 6.8), mat(0xfff0d4));
   railLeft.position.set(-7.9, 1.05, 0.8);
-  scene.add(railLeft);
-  const railRight = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 6.8), fenceMat);
+  exterior.add(railLeft);
+  const railRight = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 6.8), mat(0xfff0d4));
   railRight.position.set(7.9, 1.05, 0.8);
-  scene.add(railRight);
+  exterior.add(railRight);
 
   const trees = [
     [-11, -8], [11, -7], [-12, 4], [12, 3], [-9, 11], [9, 10], [0, 12.5], [-4, -11], [4, -10]
@@ -151,7 +138,7 @@ export function buildWorld(scene) {
     );
     trunk.position.set(x, 0.9, z);
     trunk.castShadow = true;
-    scene.add(trunk);
+    exterior.add(trunk);
     const green = [0x9ed9a5, 0x8fd4a0, 0xaee8b4][Math.floor(Math.random() * 3)];
     const leaves = new THREE.Mesh(
       new THREE.SphereGeometry(1.5, 12, 10),
@@ -160,7 +147,7 @@ export function buildWorld(scene) {
     leaves.position.set(x, 2.6, z);
     leaves.scale.y = 1.25;
     leaves.castShadow = true;
-    scene.add(leaves);
+    exterior.add(leaves);
   }
 
   const bushes = [
@@ -174,7 +161,7 @@ export function buildWorld(scene) {
     bush.position.set(x, 0.7, z);
     bush.scale.set(1.3, 0.9, 1.1);
     bush.castShadow = true;
-    scene.add(bush);
+    exterior.add(bush);
   }
 
   for (let i = 0; i < 26; i++) {
@@ -187,13 +174,13 @@ export function buildWorld(scene) {
       mat(0x6bbf72)
     );
     stem.position.set(x, 0.25, z);
-    scene.add(stem);
+    exterior.add(stem);
     const head = new THREE.Mesh(
       new THREE.SphereGeometry(0.16, 8, 8),
       mat(PASTEL_FLOWERS[Math.floor(Math.random() * PASTEL_FLOWERS.length)])
     );
     head.position.set(x, 0.58, z);
-    scene.add(head);
+    exterior.add(head);
   }
 
   const pond = new THREE.Mesh(
@@ -202,7 +189,7 @@ export function buildWorld(scene) {
   );
   pond.rotation.x = -Math.PI / 2;
   pond.position.set(-8.5, 0.05, 9.5);
-  scene.add(pond);
+  exterior.add(pond);
 
   const pondRim = new THREE.Mesh(
     new THREE.TorusGeometry(2.6, 0.18, 8, 32),
@@ -210,7 +197,40 @@ export function buildWorld(scene) {
   );
   pondRim.rotation.x = -Math.PI / 2;
   pondRim.position.set(-8.5, 0.08, 9.5);
-  scene.add(pondRim);
+  exterior.add(pondRim);
+
+  scene.add(exterior);
+
+  const doorGroup = new THREE.Group();
+  doorGroup.position.set(0, 0, -1.48);
+  doorGroup.userData.door = true;
+
+  const doorPivot = new THREE.Group();
+  doorPivot.position.set(-0.7, 0, 0);
+  doorGroup.add(doorPivot);
+
+  const doorMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(1.4, 2.2, 0.1),
+    mat(0x8a5a3b, { side: THREE.DoubleSide })
+  );
+  doorMesh.position.set(0.7, 1.1, 0);
+  doorMesh.castShadow = true;
+  doorPivot.add(doorMesh);
+
+  const knob = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 8, 8),
+    mat(0xf5d76e)
+  );
+  knob.position.set(0.5, 1.0, 0.07);
+  doorPivot.add(knob);
+  const knobInner = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 8, 8),
+    mat(0xf5d76e)
+  );
+  knobInner.position.set(0.5, 1.0, -0.07);
+  doorPivot.add(knobInner);
+
+  scene.add(doorGroup);
 
   const hemi = new THREE.HemisphereLight(0xffe9f0, 0xcfe9c8, 0.9);
   scene.add(hemi);
@@ -234,5 +254,5 @@ export function buildWorld(scene) {
   scene.background = new THREE.Color(0xcfeaff);
   scene.fog = new THREE.Fog(0xcfeaff, 30, 70);
 
-  return { ground };
+  return { ground, exterior, doorGroup, doorPivot };
 }
