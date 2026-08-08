@@ -554,8 +554,8 @@ function quadBezier(p0, p1, p2, t) {
   );
 }
 
-const INSIDE_POS = new THREE.Vector3(1.4, 3.9, -5.3);
-const INSIDE_TARGET = new THREE.Vector3(0, 0.5, -3.8);
+const INSIDE_POS = new THREE.Vector3(3.0, 3.9, -4.6);
+const INSIDE_TARGET = new THREE.Vector3(0, 1.0, -3.8);
 const OUTSIDE_POS = new THREE.Vector3(6.89, 6.64, 8.68);
 const OUTSIDE_TARGET = new THREE.Vector3(0, 1.2, 0);
 const DOOR_WAY = new THREE.Vector3(0.2, 1.15, -2.1);
@@ -593,9 +593,9 @@ function updateTransition(now) {
     interiorGroup.visible = insideMode;
     doorPivot.rotation.y = 0;
     camTarget.copy(transition.toTarget);
-    camRadius = insideMode ? 4.0 : 12;
-    camPhi = insideMode ? 0.55 : 1.1;
-    camTheta = insideMode ? 2.4 : 0.7;
+    camRadius = insideMode ? 4.25 : 12;
+    camPhi = insideMode ? 0.82 : 1.1;
+    camTheta = insideMode ? 1.83 : 0.7;
     updateHint();
     if (insideMode) notify('🏠 Welcome home!');
     else notify('🌤️ Back out on the porch!');
@@ -610,11 +610,11 @@ function updateTransition(now) {
 }
 
 function maxInsideRadius() {
+  if (camTarget.y + 3.5 * Math.cos(camPhi) > 2.6) return 9;
   const rx = 3.3 - Math.abs(camTarget.x);
   const rzF = -1.7 - camTarget.z;
   const rzB = -5.95 - camTarget.z;
-  const horiz = Math.min(rx, rzF, rzB);
-  return Math.max(1.2, horiz / Math.max(Math.sin(camPhi), 0.3));
+  return Math.max(1.2, Math.min(rx, rzF, rzB) / Math.max(Math.sin(camPhi), 0.3));
 }
 
 function updateHint() {
@@ -647,10 +647,10 @@ function updateCamera(dt) {
       camTarget.lerp(new THREE.Vector3(0, 1.2, 0), 0.015);
     }
     if (insideMode) {
-      camTarget.x = THREE.MathUtils.clamp(camTarget.x, -2.8, 2.8);
-      camTarget.z = THREE.MathUtils.clamp(camTarget.z, -5.7, -2.4);
-      camRadius = THREE.MathUtils.clamp(camRadius, 1.5, maxInsideRadius());
-      camPhi = THREE.MathUtils.clamp(camPhi, 0.4, 1.32);
+      camTarget.x = THREE.MathUtils.clamp(camTarget.x, -2.9, 2.9);
+      camTarget.z = THREE.MathUtils.clamp(camTarget.z, -5.8, -1.9);
+      camRadius = THREE.MathUtils.clamp(camRadius, 2.0, maxInsideRadius());
+      camPhi = THREE.MathUtils.clamp(camPhi, 0.3, 1.45);
     }
     clampTarget();
     applyCamera();
@@ -744,10 +744,10 @@ function registerListeners() {
       clampTarget();
     }
     if (insideMode) {
-      camRadius = THREE.MathUtils.clamp(camRadius, 1.5, maxInsideRadius());
-      camPhi = THREE.MathUtils.clamp(camPhi, 0.4, 1.32);
-      camTarget.x = THREE.MathUtils.clamp(camTarget.x, -2.8, 2.8);
-      camTarget.z = THREE.MathUtils.clamp(camTarget.z, -5.7, -2.4);
+      camRadius = THREE.MathUtils.clamp(camRadius, 2.0, maxInsideRadius());
+      camPhi = THREE.MathUtils.clamp(camPhi, 0.3, 1.45);
+      camTarget.x = THREE.MathUtils.clamp(camTarget.x, -2.9, 2.9);
+      camTarget.z = THREE.MathUtils.clamp(camTarget.z, -5.8, -1.9);
     }
   });
 
@@ -760,7 +760,7 @@ function registerListeners() {
     e.preventDefault();
     camRadius = camRadius * Math.exp(e.deltaY * 0.0012);
     if (insideMode) {
-      camRadius = THREE.MathUtils.clamp(camRadius, 1.5, maxInsideRadius());
+      camRadius = THREE.MathUtils.clamp(camRadius, 2.0, maxInsideRadius());
     } else {
       camRadius = THREE.MathUtils.clamp(camRadius, 5, 30);
     }
