@@ -3,16 +3,10 @@ const SAVE_KEY = 'neko-nook-save';
 const OLD_IMAGES = ['assets/cat-hero.jpg', 'assets/cat-friend-1.jpg', 'assets/cat-friend-2.jpg'];
 
 export const CAT_PORTRAITS = {
-  Mochi: 'assets/cat images/suki.png',
-  Biscuit: 'assets/cat images/tofu.png',
-  Pumpkin: 'assets/cat images/pumpkin.png',
-  Noodle: 'assets/cat images/basil.png',
   Suki: 'assets/cat images/suki.png',
+  Pumpkin: 'assets/cat images/pumpkin.png',
   Tofu: 'assets/cat images/tofu.png',
-  Miso: 'assets/cat images/pumpkin.png',
-  Peach: 'assets/cat images/suki.png',
-  Basil: 'assets/cat images/basil.png',
-  Maple: 'assets/cat images/tofu.png'
+  Basil: 'assets/cat images/basil.png'
 };
 
 export const DEFAULT_PORTRAIT = 'assets/cat images/suki.png';

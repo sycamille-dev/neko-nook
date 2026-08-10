@@ -1,4 +1,4 @@
-import { gameState, saveState, spendCoins, updateCoinUI, notify, SHOP_ITEMS } from './state.js';
+import { gameState, saveState, spendCoins, updateCoinUI, notify, SHOP_ITEMS, portraitFor } from './state.js';
 import { initAudio, resumeAudio, startMusic, setMuted, playPop } from './audio.js';
 import {
   initScene,
@@ -90,7 +90,7 @@ function catCard(cat) {
   const selected = getSelectedUid() === cat.uid;
   return `
     <div class="cat-card ${selected ? 'cat-card-selected' : ''}" data-cat="${cat.uid}">
-      <img class="cat-portrait" src="${cat.image}" alt="${cat.name}">
+      <img class="cat-portrait" src="${portraitFor(cat.name)}" alt="${cat.name}">
       <span class="cat-name">${cat.name}</span>
       <button class="btn-soft btn-sm" data-pet="${cat.uid}">Pet 🖐 +5</button>
     </div>`;
@@ -102,7 +102,7 @@ function renderCatdex() {
   count.textContent = gameState.catdex.length;
   list.innerHTML = gameState.catdex.length
     ? gameState.catdex
-        .map((c) => `<span class="catdex-entry"><img class="catdex-thumb" src="${c.image}" alt=""> ${c.name}</span>`)
+        .map((c) => `<span class="catdex-entry"><img class="catdex-thumb" src="${portraitFor(c.name)}" alt=""> ${c.name}</span>`)
         .join('')
     : '<span class="empty-hint">No cats in your Catdex yet. Pet your visitors!</span>';
 }
@@ -114,7 +114,7 @@ function renderChips() {
     .map(
       (c) => `
       <button class="chip-portrait ${c.uid === selected ? 'chip-selected' : ''}" data-chip="${c.uid}" title="${c.name}">
-        <img src="${c.image}" alt="${c.name}">
+        <img src="${portraitFor(c.name)}" alt="${c.name}">
       </button>`
     )
     .join('');
