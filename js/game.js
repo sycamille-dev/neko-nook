@@ -179,9 +179,10 @@ document.getElementById('cat-chips').addEventListener('click', (e) => {
 });
 
 const HERO_OPTIONS = [
-  'assets/cat-hero.jpg',
-  'assets/cat-friend-1.jpg',
-  'assets/cat-friend-2.jpg'
+  'assets/cat images/suki.png',
+  'assets/cat images/tofu.png',
+  'assets/cat images/pumpkin.png',
+  'assets/cat images/basil.png'
 ];
 
 const heroAvatar = document.querySelector('.hero-avatar');

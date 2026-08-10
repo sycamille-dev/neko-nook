@@ -1,37 +1,52 @@
 const SAVE_KEY = 'neko-nook-save';
 
+const OLD_IMAGES = ['assets/cat-hero.jpg', 'assets/cat-friend-1.jpg', 'assets/cat-friend-2.jpg'];
+
+export const CAT_PORTRAITS = {
+  Mochi: 'assets/cat images/suki.png',
+  Biscuit: 'assets/cat images/tofu.png',
+  Pumpkin: 'assets/cat images/pumpkin.png',
+  Noodle: 'assets/cat images/basil.png',
+  Suki: 'assets/cat images/suki.png',
+  Tofu: 'assets/cat images/tofu.png',
+  Miso: 'assets/cat images/pumpkin.png',
+  Peach: 'assets/cat images/suki.png',
+  Basil: 'assets/cat images/basil.png',
+  Maple: 'assets/cat images/tofu.png'
+};
+
+export const DEFAULT_PORTRAIT = 'assets/cat images/suki.png';
+
+export function portraitFor(name) {
+  return CAT_PORTRAITS[name] || DEFAULT_PORTRAIT;
+}
+
+export const CAT_POOL = Object.entries(CAT_PORTRAITS).map(([name, image]) => ({ name, image }));
+
+function migrateImage(path, name) {
+  if (OLD_IMAGES.includes(path)) return portraitFor(name);
+  return path;
+}
+
 const defaultState = {
   coins: 100,
   inventory: { food: [], toys: [] },
   placedItems: [],
   visitingCats: [],
   catdex: [],
-  heroImage: 'assets/cat-hero.jpg',
+  heroImage: DEFAULT_PORTRAIT,
   totalEarned: 0,
   tttRecord: { wins: 0, losses: 0, draws: 0 },
   pacPawsBestStage: 1,
   muted: false
 };
 
-export const CAT_POOL = [
-  { name: 'Mochi', image: 'assets/cat-friend-1.jpg' },
-  { name: 'Biscuit', image: 'assets/cat-friend-2.jpg' },
-  { name: 'Pumpkin', image: 'assets/cat images/pumpkin.png' },
-  { name: 'Noodle', image: 'assets/cat-friend-2.jpg' },
-  { name: 'Suki', image: 'assets/cat images/suki.png' },
-  { name: 'Tofu', image: 'assets/cat images/tofu.png' },
-  { name: 'Miso', image: 'assets/cat-friend-1.jpg' },
-  { name: 'Peach', image: 'assets/cat-hero.jpg' },
-  { name: 'Basil', image: 'assets/cat images/basil.png' },
-  { name: 'Maple', image: 'assets/cat-friend-2.jpg' }
-];
-
 function loadState() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return structuredClone(defaultState);
     const saved = JSON.parse(raw);
-    return {
+    const state = {
       ...structuredClone(defaultState),
       ...saved,
       inventory: {
@@ -42,6 +57,10 @@ function loadState() {
       visitingCats: Array.isArray(saved.visitingCats) ? saved.visitingCats : [],
       catdex: Array.isArray(saved.catdex) ? saved.catdex : []
     };
+    state.heroImage = migrateImage(state.heroImage, '');
+    state.visitingCats = state.visitingCats.map((c) => ({ ...c, image: migrateImage(c.image, c.name) }));
+    state.catdex = state.catdex.map((c) => ({ ...c, image: migrateImage(c.image, c.name) }));
+    return state;
   } catch {
     return structuredClone(defaultState);
   }
