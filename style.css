@@ -703,6 +703,14 @@ canvas {
   margin: 0 16px;
 }
 
+.intro-logo {
+  width: min(230px, 62vw);
+  border-radius: 18px;
+  display: block;
+  margin: 0 auto 18px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
 .intro-title {
   margin: 0;
   font-size: 2.7rem;
