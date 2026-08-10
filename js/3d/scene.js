@@ -431,73 +431,81 @@ function updateZzz(cat, dt) {
 
 function updateCats(dt) {
   for (const [uid, cat] of cats) {
-    cat.update(dt);
-    const done = cat.consumeJustFinished();
-    if (done === 'arrive' || done === 'walk') {
-      if (cat.playGoal) {
-        const goal = cat.playGoal;
-        cat.playGoal = null;
-        cat.play(4.5);
-        playMeow(0.3);
-        cat.leaveTimer = Math.max(cat.leaveTimer, 15);
-        if (goal.userData.isToy) playPop();
-      } else if (Math.random() < 0.28) {
-        cat.sleep(5 + Math.random() * 6);
-      } else {
-        cat.sit();
-      }
-    } else if (done === 'sit') {
-      if (Math.random() < 0.35) cat.sleep(5 + Math.random() * 6);
-      else wander(cat);
-    } else if (done === 'sleep') {
-      wander(cat);
-    } else if (done === 'eat') {
-      wander(cat);
-    } else if (done === 'play') {
-      addCoins(1);
-      spawnFloat('🪙+1', cat);
-      playChime();
-      wander(cat);
-    } else if (done === 'follow') {
-      cat.pinned = false;
-      wander(cat);
-    } else if (done === 'leave') {
-      removeCat(uid);
-      continue;
+    try {
+      updateCat(dt, uid, cat);
+    } catch (err) {
+      console.error('Cat update failed:', uid, err);
     }
-
-    if (cat.state === 'eat' && eatSoundT.has(uid)) {
-      const now = performance.now();
-      if (now >= eatSoundT.get(uid)) {
-        playEat();
-        eatSoundT.set(uid, now + 520);
-      }
-    } else if (eatSoundT.has(uid)) {
-      eatSoundT.delete(uid);
-    }
-
-    if (!cat.pinned && cat.state !== 'leave' && cat.leaveTimer <= 0) {
-      startLeave(cat);
-    }
-
-    if (cat.state === 'follow') {
-      const dir = new THREE.Vector3();
-      camera.getWorldDirection(dir);
-      dir.y = 0;
-      cat.target.copy(camera.position).addScaledVector(dir, 3);
-      cat.target.y = 0;
-    }
-
-    if (!cat.isBusy) {
-      const next = meowSoundT.get(uid) || performance.now() + 12000 + Math.random() * 15000;
-      if (performance.now() >= next) {
-        playMeow(0.3);
-        meowSoundT.set(uid, performance.now() + 12000 + Math.random() * 15000);
-      }
-    }
-
-    updateZzz(cat, dt);
   }
+}
+
+function updateCat(dt, uid, cat) {
+  cat.update(dt);
+  const done = cat.consumeJustFinished();
+  if (done === 'arrive' || done === 'walk') {
+    if (cat.playGoal) {
+      const goal = cat.playGoal;
+      cat.playGoal = null;
+      cat.play(4.5);
+      playMeow(0.3);
+      cat.leaveTimer = Math.max(cat.leaveTimer, 15);
+      if (goal.userData.isToy) playPop();
+    } else if (Math.random() < 0.28) {
+      cat.sleep(5 + Math.random() * 6);
+    } else {
+      cat.sit();
+    }
+  } else if (done === 'sit') {
+    if (Math.random() < 0.35) cat.sleep(5 + Math.random() * 6);
+    else wander(cat);
+  } else if (done === 'sleep') {
+    wander(cat);
+  } else if (done === 'eat') {
+    wander(cat);
+  } else if (done === 'play') {
+    addCoins(1);
+    spawnFloat('🪙+1', cat);
+    playChime();
+    wander(cat);
+  } else if (done === 'follow') {
+    cat.pinned = false;
+    wander(cat);
+  } else if (done === 'leave') {
+    removeCat(uid);
+    return;
+  }
+
+  if (cat.state === 'eat' && eatSoundT.has(uid)) {
+    const now = performance.now();
+    if (now >= eatSoundT.get(uid)) {
+      playEat();
+      eatSoundT.set(uid, now + 520);
+    }
+  } else if (eatSoundT.has(uid)) {
+    eatSoundT.delete(uid);
+  }
+
+  if (!cat.pinned && cat.state !== 'leave' && cat.leaveTimer <= 0) {
+    startLeave(cat);
+  }
+
+  if (cat.state === 'follow') {
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    dir.y = 0;
+    cat.target.copy(camera.position).addScaledVector(dir, 3);
+    cat.target.y = 0;
+  }
+
+  if (!cat.isBusy) {
+    const next = meowSoundT.get(uid) || performance.now() + 12000 + Math.random() * 15000;
+    if (performance.now() >= next) {
+      playMeow(0.3);
+      meowSoundT.set(uid, performance.now() + 12000 + Math.random() * 15000);
+    }
+  }
+
+  updateZzz(cat, dt);
 }
 
 function updateItems(t) {
@@ -506,11 +514,26 @@ function updateItems(t) {
   });
 }
 
+let forcedSpawnT = 5;
+
 function updateAmbient(dt) {
   spawnT -= dt;
   if (spawnT <= 0) {
-    spawnT = 6 + Math.random() * 5;
-    if (gameState.visitingCats.length < 4 && Math.random() < 0.7) spawnCat();
+    spawnT = 5 + Math.random() * 4;
+    try {
+      if (gameState.visitingCats.length < 4 && Math.random() < 0.85) spawnCat();
+    } catch (err) {
+      console.error('Spawn failed:', err);
+    }
+  }
+  forcedSpawnT -= dt;
+  if (forcedSpawnT <= 0) {
+    forcedSpawnT = 5;
+    try {
+      if (cats.size < 2 && gameState.visitingCats.length < 4) spawnCat();
+    } catch (err) {
+      console.error('Watchdog spawn failed:', err);
+    }
   }
   birdT -= dt;
   if (birdT <= 0) {

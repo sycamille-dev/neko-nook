@@ -283,13 +283,12 @@ document.getElementById('intro-skip').addEventListener('click', () => startGame(
 
 window.addEventListener('error', (e) => {
   console.error('Uncaught error:', e.error || e.message);
-  if (!introOverlay.classList.contains('intro-hidden')) {
-    notify(`⚠️ ${e.message || 'Unexpected error'}`);
-  }
+  notify(`⚠️ ${e.message || 'Unexpected error'}`);
 });
 
 window.addEventListener('unhandledrejection', (e) => {
   console.error('Unhandled rejection:', e.reason);
+  notify(`⚠️ ${e.reason?.message || 'Unhandled error'}`);
 });
 
 document.addEventListener('keydown', (e) => {
