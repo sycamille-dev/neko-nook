@@ -1,4 +1,4 @@
-import { gameState, saveState, spendCoins, updateCoinUI, notify, SHOP_ITEMS, portraitFor, CAT_PROFILES, catAge } from './state.js';
+import { gameState, saveState, spendCoins, updateCoinUI, notify, SHOP_ITEMS, portraitFor, CAT_PROFILES, catAge, HERO_IMAGES } from './state.js';
 import { initAudio, resumeAudio, startMusic, setMuted, playPop } from './audio.js';
 import {
   initScene,
@@ -126,7 +126,7 @@ function hideCatProfile() {
 
 function renderCats() {
   const count = document.getElementById('hud-cat-count');
-  count.textContent = gameState.visitingCats.length;
+  if (count) count.textContent = gameState.visitingCats.length;
 }
 
 function renderChips() {
@@ -135,7 +135,7 @@ function renderChips() {
   el.innerHTML = gameState.visitingCats
     .map(
       (c) => `
-      <button class="chip-portrait ${c.uid === selected ? 'chip-selected' : ''}" data-chip="${c.uid}" title="${c.name}">
+      <button class="chip-portrait ${c.uid === selected ? 'chip-selected' : ''}" data-chip="${c.uid}" data-cat-name="${c.name}" title="${c.name} — view profile">
         <img src="${portraitFor(c.name)}" alt="${c.name}">
       </button>`
     )
@@ -196,15 +196,14 @@ document.getElementById('cats-modal').addEventListener('click', (e) => {
 
 document.getElementById('cat-chips').addEventListener('click', (e) => {
   const btn = e.target.closest('[data-chip]');
-  if (btn) selectCatByUid(btn.dataset.chip);
+  if (!btn) return;
+  selectCatByUid(btn.dataset.chip);
+  renderCatProfiles();
+  showCatProfile(btn.dataset.catName);
+  openModal('cats-modal');
 });
 
-const HERO_OPTIONS = [
-  'assets/cat images/suki.png',
-  'assets/cat images/tofu.png',
-  'assets/cat images/pumpkin.png',
-  'assets/cat images/basil.png'
-];
+const HERO_OPTIONS = HERO_IMAGES;
 
 const heroAvatar = document.querySelector('.hero-avatar');
 
@@ -331,6 +330,7 @@ window.addEventListener('neko:selected-changed', () => renderChips());
 updateCoinUI();
 updateTopbarAvatar();
 updateMuteUI();
+document.getElementById('app-version').textContent = __APP_VERSION__;
 renderShop();
 renderInventory();
 renderCats();

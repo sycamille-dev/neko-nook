@@ -1,21 +1,31 @@
 const SAVE_KEY = 'neko-nook-save';
 
-const OLD_IMAGES = ['assets/cat-hero.jpg', 'assets/cat-friend-1.jpg', 'assets/cat-friend-2.jpg'];
+import sukiImg from '../assets/cat images/suki.png';
+import pumpkinImg from '../assets/cat images/pumpkin.png';
+import tofuImg from '../assets/cat images/tofu.png';
+import basilImg from '../assets/cat images/basil.png';
 
 export const CAT_PORTRAITS = {
-  Suki: 'assets/cat images/suki.png',
-  Pumpkin: 'assets/cat images/pumpkin.png',
-  Tofu: 'assets/cat images/tofu.png',
-  Basil: 'assets/cat images/basil.png'
+  Suki: sukiImg,
+  Pumpkin: pumpkinImg,
+  Tofu: tofuImg,
+  Basil: basilImg
 };
 
-export const DEFAULT_PORTRAIT = 'assets/cat images/suki.png';
+export const DEFAULT_PORTRAIT = sukiImg;
+
+export const HERO_IMAGES = [sukiImg, tofuImg, pumpkinImg, basilImg];
 
 export function portraitFor(name) {
   return CAT_PORTRAITS[name] || DEFAULT_PORTRAIT;
 }
 
 export const CAT_POOL = Object.entries(CAT_PORTRAITS).map(([name, image]) => ({ name, image }));
+
+function migrateImage(path, name) {
+  if (path && path.startsWith('assets/')) return portraitFor(name);
+  return path;
+}
 
 export const CAT_PROFILES = {
   Suki: {
@@ -55,11 +65,6 @@ export function catAge(birthday) {
   const m = now.getMonth() - b.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < b.getDate())) years -= 1;
   return years;
-}
-
-function migrateImage(path, name) {
-  if (OLD_IMAGES.includes(path)) return portraitFor(name);
-  return path;
 }
 
 const defaultState = {
