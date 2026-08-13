@@ -53,7 +53,7 @@ body {
 .hero-avatar {
   width: 46px;
   height: 46px;
-  border-radius: 50%;
+  border-radius: 12px;
   object-fit: cover;
   border: 3px solid var(--lav);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
@@ -237,9 +237,9 @@ body {
 }
 
 .cat-portrait {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
   object-fit: cover;
   border: 2px solid var(--lav);
   flex-shrink: 0;
@@ -263,9 +263,9 @@ body {
 }
 
 .catdex-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   object-fit: cover;
 }
 
@@ -613,7 +613,7 @@ canvas {
   border: 3px solid rgba(255, 255, 255, 0.7);
   background: none;
   padding: 0;
-  border-radius: 50%;
+  border-radius: 12px;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
   transition: transform 0.15s ease;
