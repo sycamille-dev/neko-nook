@@ -121,26 +121,12 @@ function showCatProfile(name) {
 function hideCatProfile() {
   document.getElementById('cat-profile-detail').classList.add('hidden');
   document.getElementById('cats-overview').classList.remove('hidden');
-  document.getElementById('cats-modal-title').textContent = '🐱 Cats';
+  document.getElementById('cats-modal-title').textContent = '🐱 Cat Profiles';
 }
 
 function renderCats() {
-  const list = document.getElementById('visiting-cats');
   const count = document.getElementById('hud-cat-count');
   count.textContent = gameState.visitingCats.length;
-  list.innerHTML = gameState.visitingCats.length
-    ? gameState.visitingCats.map(catCard).join('')
-    : '<span class="empty-hint">No cats yet — place treats and toys to attract visitors!</span>';
-}
-
-function catCard(cat) {
-  const selected = getSelectedUid() === cat.uid;
-  return `
-    <div class="cat-card ${selected ? 'cat-card-selected' : ''}" data-cat="${cat.uid}">
-      <img class="cat-portrait" src="${portraitFor(cat.name)}" alt="${cat.name}">
-      <span class="cat-name">${cat.name}</span>
-      <button class="btn-soft btn-sm" data-pet="${cat.uid}">Pet 🖐 +5</button>
-    </div>`;
 }
 
 function renderChips() {
@@ -205,17 +191,6 @@ document.getElementById('cats-modal').addEventListener('click', (e) => {
   if (profBtn) {
     showCatProfile(profBtn.dataset.profile);
     return;
-  }
-  const card = e.target.closest('[data-cat]');
-  if (card) {
-    selectCatByUid(card.dataset.cat);
-    closeModal('cats-modal');
-    return;
-  }
-  const petBtn = e.target.closest('[data-pet]');
-  if (petBtn) {
-    petCatByUid(petBtn.dataset.pet);
-    renderCats();
   }
 });
 
