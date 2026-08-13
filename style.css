@@ -688,6 +688,103 @@ canvas {
   background: #fff1e8;
 }
 
+.cat-profiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.profile-card {
+  border: 2px solid var(--border);
+  background: #fffaf2;
+  border-radius: 16px;
+  padding: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--ink);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.profile-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--pink);
+}
+
+.profile-card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.profile-card span {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.profile-detail {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.profile-detail .btn-sm {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.profile-hero {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 3px solid var(--lav);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
+}
+
+.profile-info h3 {
+  margin: 0 0 10px;
+  font-size: 1.35rem;
+  color: var(--pink);
+}
+
+.profile-line {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin: 0 0 10px;
+}
+
+.like-chip,
+.dislike-chip {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 3px 10px;
+  margin: 2px 3px 2px 0;
+  font-size: 0.8rem;
+}
+
+.like-chip {
+  background: var(--mint-soft);
+  border: 2px solid var(--mint);
+  color: #2c5c4b;
+}
+
+.dislike-chip {
+  background: #fdecec;
+  border: 2px solid #f2c4c4;
+  color: #a34545;
+}
+
+@media (max-width: 480px) {
+  .profile-detail {
+    grid-template-columns: 110px 1fr;
+    gap: 12px;
+  }
+}
+
 .intro-overlay {
   position: fixed;
   inset: 0;

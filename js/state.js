@@ -17,6 +17,46 @@ export function portraitFor(name) {
 
 export const CAT_POOL = Object.entries(CAT_PORTRAITS).map(([name, image]) => ({ name, image }));
 
+export const CAT_PROFILES = {
+  Suki: {
+    birthday: '2022-03-14',
+    breed: 'Calico',
+    personality: 'Playful and curious — always the first to investigate any new toy.',
+    likes: ['Yarn balls', 'Feather wands', 'Sunbeams'],
+    dislikes: ['Baths', 'The vacuum cleaner']
+  },
+  Pumpkin: {
+    birthday: '2021-10-31',
+    breed: 'Ginger Tabby',
+    personality: 'Easy-going and cuddly. Expert napper, professional lap warmer.',
+    likes: ['Naps', 'Catnip', 'Warm laps'],
+    dislikes: ['Loud noises', 'Early mornings']
+  },
+  Tofu: {
+    birthday: '2023-01-15',
+    breed: 'Tuxedo',
+    personality: 'Food-motivated and social. Will follow you anywhere for a treat.',
+    likes: ['Treats', 'Tuna', 'Attention'],
+    dislikes: ['Sharing food', 'Closed doors']
+  },
+  Basil: {
+    birthday: '2020-05-02',
+    breed: 'British Shorthair',
+    personality: 'Grumpy on the surface, loyal underneath. Guardian of the windowsill.',
+    likes: ['Windowsills', 'Quiet afternoons', 'His humans'],
+    dislikes: ['Strangers', 'Being woken up']
+  }
+};
+
+export function catAge(birthday) {
+  const b = new Date(birthday);
+  const now = new Date();
+  let years = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) years -= 1;
+  return years;
+}
+
 function migrateImage(path, name) {
   if (OLD_IMAGES.includes(path)) return portraitFor(name);
   return path;

@@ -1,4 +1,4 @@
-import { gameState, saveState, spendCoins, updateCoinUI, notify, SHOP_ITEMS, portraitFor } from './state.js';
+import { gameState, saveState, spendCoins, updateCoinUI, notify, SHOP_ITEMS, portraitFor, CAT_PROFILES, catAge } from './state.js';
 import { initAudio, resumeAudio, startMusic, setMuted, playPop } from './audio.js';
 import {
   initScene,
@@ -77,6 +77,53 @@ function inventoryChip(item) {
     </div>`;
 }
 
+function renderCatProfiles() {
+  const el = document.getElementById('cat-profiles-grid');
+  el.innerHTML = Object.entries(CAT_PROFILES)
+    .map(
+      ([name]) => `
+      <button class="profile-card" data-profile="${name}">
+        <img src="${portraitFor(name)}" alt="${name}">
+        <span>${name}</span>
+      </button>`
+    )
+    .join('');
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function showCatProfile(name) {
+  const p = CAT_PROFILES[name];
+  if (!p) return;
+  const age = catAge(p.birthday);
+  const el = document.getElementById('cat-profile-detail');
+  el.innerHTML = `
+    <div class="profile-detail">
+      <button class="btn-soft btn-sm" data-back>← All cats</button>
+      <img class="profile-hero" src="${portraitFor(name)}" alt="${name}">
+      <div class="profile-info">
+        <h3>${name}</h3>
+        <p class="profile-line">🎂 Birthday: <b>${formatDate(p.birthday)}</b> · ${age < 1 ? '<1' : age} yr${age === 1 ? '' : 's'} old</p>
+        <p class="profile-line">🐾 Breed: <b>${p.breed}</b></p>
+        <p class="profile-line">💬 ${p.personality}</p>
+        <p class="profile-line">❤️ Likes: ${p.likes.map((l) => `<span class="like-chip">${l}</span>`).join('')}</p>
+        <p class="profile-line">💔 Dislikes: ${p.dislikes.map((d) => `<span class="dislike-chip">${d}</span>`).join('')}</p>
+      </div>
+    </div>`;
+  document.getElementById('cats-modal-title').textContent = `🐱 ${name}'s Profile`;
+  document.getElementById('cats-overview').classList.add('hidden');
+  el.classList.remove('hidden');
+}
+
+function hideCatProfile() {
+  document.getElementById('cat-profile-detail').classList.add('hidden');
+  document.getElementById('cats-overview').classList.remove('hidden');
+  document.getElementById('cats-modal-title').textContent = '🐱 Cats';
+}
+
 function renderCats() {
   const list = document.getElementById('visiting-cats');
   const count = document.getElementById('hud-cat-count');
@@ -94,17 +141,6 @@ function catCard(cat) {
       <span class="cat-name">${cat.name}</span>
       <button class="btn-soft btn-sm" data-pet="${cat.uid}">Pet 🖐 +5</button>
     </div>`;
-}
-
-function renderCatdex() {
-  const list = document.getElementById('catdex-list');
-  const count = document.getElementById('catdex-count');
-  count.textContent = gameState.catdex.length;
-  list.innerHTML = gameState.catdex.length
-    ? gameState.catdex
-        .map((c) => `<span class="catdex-entry"><img class="catdex-thumb" src="${portraitFor(c.name)}" alt=""> ${c.name}</span>`)
-        .join('')
-    : '<span class="empty-hint">No cats in your Catdex yet. Pet your visitors!</span>';
 }
 
 function renderChips() {
@@ -136,7 +172,8 @@ document.getElementById('hud-shop').addEventListener('click', () => {
 document.getElementById('close-shop').addEventListener('click', () => closeModal('shop-modal'));
 document.getElementById('hud-cats').addEventListener('click', () => {
   renderCats();
-  renderCatdex();
+  renderCatProfiles();
+  hideCatProfile();
   openModal('cats-modal');
 });
 document.getElementById('close-cats').addEventListener('click', () => closeModal('cats-modal'));
@@ -159,6 +196,16 @@ document.getElementById('shop-modal').addEventListener('click', (e) => {
 
 document.getElementById('cats-modal').addEventListener('click', (e) => {
   if (e.target.id === 'cats-modal') closeModal('cats-modal');
+  const back = e.target.closest('[data-back]');
+  if (back) {
+    hideCatProfile();
+    return;
+  }
+  const profBtn = e.target.closest('[data-profile]');
+  if (profBtn) {
+    showCatProfile(profBtn.dataset.profile);
+    return;
+  }
   const card = e.target.closest('[data-cat]');
   if (card) {
     selectCatByUid(card.dataset.cat);
@@ -169,7 +216,6 @@ document.getElementById('cats-modal').addEventListener('click', (e) => {
   if (petBtn) {
     petCatByUid(petBtn.dataset.pet);
     renderCats();
-    renderCatdex();
   }
 });
 
@@ -207,8 +253,7 @@ function renderStatsLine() {
   el.textContent =
     `🪙 Total coins earned: ${gameState.totalEarned}` +
     ` · 🐾 Cat-Tac-Toe: ${wins}W ${losses}L ${draws}D` +
-    ` · 💧 Best Pac-Paws stage: ${gameState.pacPawsBestStage}` +
-    ` · 📖 Cats in Catdex: ${gameState.catdex.length}`;
+    ` · 💧 Best Pac-Paws stage: ${gameState.pacPawsBestStage}`;
 }
 
 function openSettings() {
@@ -302,7 +347,6 @@ document.addEventListener('keydown', (e) => {
 
 window.addEventListener('neko:cats-changed', () => {
   renderCats();
-  renderCatdex();
   renderChips();
 });
 window.addEventListener('neko:inventory-changed', () => renderInventory());
@@ -315,7 +359,7 @@ updateMuteUI();
 renderShop();
 renderInventory();
 renderCats();
-renderCatdex();
+renderCatProfiles();
 renderChips();
 try {
   initScene();

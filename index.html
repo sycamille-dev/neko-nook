@@ -85,14 +85,17 @@
 <div id="cats-modal" class="modal hidden">
   <div class="modal-box">
     <div class="modal-head">
-      <h2>🐱 Cats</h2>
+      <h2 id="cats-modal-title">🐱 Cats</h2>
       <button id="close-cats" class="modal-close">✕</button>
     </div>
     <div class="modal-body">
-      <h3>Visiting now</h3>
-      <div id="visiting-cats"></div>
-      <h3>📖 Catdex <span id="catdex-count" class="badge">0</span></h3>
-      <div id="catdex-list"></div>
+      <div id="cats-overview">
+        <h3>Visiting now</h3>
+        <div id="visiting-cats"></div>
+        <h3>🐾 Meet the Cats</h3>
+        <div id="cat-profiles-grid" class="cat-profiles-grid"></div>
+      </div>
+      <div id="cat-profile-detail" class="hidden"></div>
     </div>
   </div>
 </div>

@@ -213,13 +213,7 @@ export function petCatByUid(uid) {
   const cat = cats.get(uid);
   const entry = gameState.visitingCats.find((c) => c.uid === uid);
   if (!cat || !entry) return;
-  const known = gameState.catdex.some((c) => c.name === entry.name);
-  if (!known) {
-    gameState.catdex.push({ name: entry.name, image: entry.image });
-    notify(`${entry.name} joined your Catdex! +5 Neko Coins`);
-  } else {
-    notify(`You petted ${entry.name}! +5 Neko Coins`);
-  }
+  notify(`You petted ${entry.name}! +5 Neko Coins`);
   addCoins(5);
   playPurr();
   playHappy();
@@ -228,7 +222,6 @@ export function petCatByUid(uid) {
   spawnFloat('🪙+5', cat);
   spawnHearts(cat);
   saveState();
-  emit('neko:cats-changed');
 }
 
 export function feedCatByUid(uid) {
