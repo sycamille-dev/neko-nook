@@ -20,6 +20,7 @@
 
 body {
   margin: 0;
+  overflow-x: hidden;
   font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe UI', sans-serif;
   background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
   color: var(--ink);
@@ -30,12 +31,15 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 10px 24px;
   background: rgba(255, 253, 249, 0.88);
   border-bottom: 2px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 20;
+  backdrop-filter: blur(6px);
 }
 
 .topbar-left {
@@ -95,7 +99,8 @@ body {
   display: flex;
   gap: 10px;
   justify-content: center;
-  padding: 18px 16px 6px;
+  flex-wrap: wrap;
+  padding: 16px 12px 6px;
 }
 
 .tab {
@@ -313,7 +318,7 @@ button:disabled {
 
 .arcade-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 18px;
   align-items: start;
 }
@@ -552,6 +557,7 @@ canvas {
   position: relative;
   width: 100%;
   height: calc(100vh - 128px);
+  height: calc(100dvh - 128px);
   min-height: 420px;
   border-radius: 20px;
   overflow: hidden;
@@ -739,22 +745,6 @@ canvas {
   pointer-events: none;
 }
 
-@media (max-width: 760px) {
-  .scene-container {
-    height: calc(100vh - 138px);
-  }
-
-  .selection-bar {
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: 92vw;
-  }
-
-  .hud-hint {
-    display: none;
-  }
-}
-
 .toast {
   position: fixed;
   bottom: 26px;
@@ -778,22 +768,168 @@ canvas {
   transform: translateX(-50%) translateY(0);
 }
 
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 760px) {
-  .porch-layout,
-  .arcade-layout {
-    grid-template-columns: 1fr;
+  .topbar {
+    padding: 8px 12px;
+    gap: 6px;
   }
 
-  .ttt-board {
-    grid-template-columns: repeat(3, 68px);
-  }
-
-  .ttt-cell {
-    width: 68px;
-    height: 68px;
+  .topbar-left {
+    gap: 8px;
   }
 
   .topbar h1 {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+  }
+
+  .hero-avatar {
+    width: 38px;
+    height: 38px;
+  }
+
+  .coin-counter {
+    font-size: 0.85rem;
+    padding: 5px 12px;
+  }
+
+  .gear-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .tab {
+    font-size: 0.9rem;
+    padding: 8px 18px;
+  }
+
+  .view {
+    padding: 10px;
+  }
+
+  .scene-container {
+    height: calc(100vh - 120px);
+    height: calc(100dvh - 120px);
+    min-height: 300px;
+    border-radius: 14px;
+  }
+
+  .hud-btn {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+
+  .cat-chips {
+    gap: 4px;
+    max-width: 55%;
+  }
+
+  .chip-portrait {
+    width: 36px;
+    height: 36px;
+  }
+
+  .selection-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 94vw;
+    padding: 8px 10px;
+    gap: 6px;
+    bottom: 10px;
+  }
+
+  .sel-name {
+    width: 100%;
+    text-align: center;
+    margin: 0;
+  }
+
+  .hud-hint {
+    display: none;
+  }
+
+  .arcade-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .game-card {
+    padding: 14px;
+  }
+
+  .modal-box {
+    width: 96vw;
+    padding: 16px;
+    max-height: 88dvh;
+  }
+
+  .intro-card {
+    padding: 26px 20px;
+  }
+
+  .intro-title {
+    font-size: 2rem;
+  }
+
+  .intro-actions {
+    flex-direction: column;
+  }
+
+  .intro-actions .btn-primary,
+  .intro-actions .btn-soft {
+    width: 100%;
+  }
+
+  .shop-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+
+  .cat-card {
+    flex-wrap: wrap;
+  }
+
+  .cat-card .btn-soft {
+    margin-left: auto;
+  }
+
+  .ttt-board {
+    grid-template-columns: repeat(3, 64px);
+    gap: 6px;
+  }
+
+  .ttt-cell {
+    width: 64px;
+    height: 64px;
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .ttt-board {
+    grid-template-columns: repeat(3, 52px);
+  }
+
+  .ttt-cell {
+    width: 52px;
+    height: 52px;
+    font-size: 1.5rem;
+  }
+
+  .btn-primary,
+  .btn-soft {
+    font-size: 0.85rem;
+    padding: 9px 16px;
+  }
+
+  .selection-bar .btn-sm {
+    font-size: 0.78rem;
+    padding: 6px 10px;
   }
 }
