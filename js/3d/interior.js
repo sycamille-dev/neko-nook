@@ -28,10 +28,12 @@ function sph(r, color, x, y, z, opts = {}) {
 }
 
 const cutawayMats = [];
+const interiorWindows = [];
 
-function wallBox(w, h, d, color, x, y, z) {
+function wallBox(w, h, d, color, x, y, z, isWindow = false) {
   const m = box(w, h, d, color, { x, y, z });
   cutawayMats.push(m.material);
+  if (isWindow) interiorWindows.push(m.material);
   return m;
 }
 
@@ -68,13 +70,13 @@ export function buildInterior() {
 
   const windowColor = 0xbfe8ff;
   const windowFrame = 0xffffff;
-  g.add(wallBox(1.2, 1.0, 0.08, windowColor, -2.0, 1.7, -5.99));
+  g.add(wallBox(1.2, 1.0, 0.08, windowColor, -2.0, 1.7, -5.99, true));
   g.add(wallBox(1.35, 0.12, 0.08, windowFrame, -2.0, 1.7, -5.97));
   g.add(wallBox(0.12, 1.15, 0.08, windowFrame, -2.0, 1.7, -5.97));
-  g.add(wallBox(1.2, 1.0, 0.08, windowColor, 2.4, 1.7, -5.99));
+  g.add(wallBox(1.2, 1.0, 0.08, windowColor, 2.4, 1.7, -5.99, true));
   g.add(wallBox(1.35, 0.12, 0.08, windowFrame, 2.4, 1.7, -5.97));
   g.add(wallBox(0.12, 1.15, 0.08, windowFrame, 2.4, 1.7, -5.97));
-  g.add(wallBox(0.08, 1.1, 1.4, windowColor, -3.41, 1.7, -2.7));
+  g.add(wallBox(0.08, 1.1, 1.4, windowColor, -3.41, 1.7, -2.7, true));
   g.add(wallBox(0.08, 1.25, 1.55, windowFrame, -3.41, 1.7, -2.7));
 
   const sofa = new THREE.Group();
@@ -198,6 +200,21 @@ export function buildInterior() {
   p3.position.set(2.2, 2.2, -2.9);
   g.add(p3);
 
+  const interiorAmbient = g.children.find((c) => c.isAmbientLight);
+  const interiorPoints = [p1, p2, p3];
+  p1.userData.baseIntensity = 0.9;
+  p2.userData.baseIntensity = 0.8;
+  p3.userData.baseIntensity = 0.55;
+  const dayWindowC = new THREE.Color(0xbfe8ff);
+  const nightWindowC = new THREE.Color(0x33335c);
+
+  setInteriorNightRefs = {
+    ambient: interiorAmbient,
+    points: interiorPoints,
+    dayWindowC,
+    nightWindowC
+  };
+
   const pendant = (x, z) => {
     g.add(cyl(0.02, 0.02, 0.25, 0x4a3a2e, x, 2.5, z, { castShadow: false }));
     const shade = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.22, 12), mat(0xffe0b0));
@@ -210,4 +227,16 @@ export function buildInterior() {
   pendant(2.2, -2.9);
 
   return g;
+}
+
+let setInteriorNightRefs = null;
+
+export function setInteriorNight(t) {
+  if (!setInteriorNightRefs) return;
+  const { ambient, points, dayWindowC, nightWindowC } = setInteriorNightRefs;
+  ambient.intensity = 0.55 - 0.3 * t;
+  points.forEach((p) => {
+    p.intensity = p.userData.baseIntensity * (0.6 + 0.9 * t);
+  });
+  interiorWindows.forEach((m) => m.color.lerpColors(dayWindowC, nightWindowC, t));
 }

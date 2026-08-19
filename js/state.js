@@ -77,7 +77,8 @@ const defaultState = {
   totalEarned: 0,
   tttRecord: { wins: 0, losses: 0, draws: 0 },
   pacPawsBestStage: 1,
-  muted: false
+  muted: false,
+  dayTime: 0
 };
 
 function loadState() {

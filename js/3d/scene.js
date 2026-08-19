@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { gameState, saveState, addCoins, notify, CAT_POOL } from '../state.js';
 import { playMeow, playPurr, playHappy, playEat, playPop, playBird, resumeAudio } from '../audio.js';
 import { buildWorld } from './world.js';
-import { buildInterior, setCutaway } from './interior.js';
+import { buildInterior, setCutaway, setInteriorNight } from './interior.js';
 import { Cat3D } from './cats.js';
 import { makeItemMesh } from './items3d.js';
 
@@ -19,6 +19,12 @@ let doorGroup = null;
 let doorPivot = null;
 let interiorGroup = null;
 let insideMode = false;
+let worldLights = null;
+let dayTime = 0;
+let saveDayT = 0;
+let uiNight = false;
+
+const DAY_SECONDS = 360;
 
 const camTarget = new THREE.Vector3(0, 1.2, 0);
 let camRadius = 12;
@@ -653,6 +659,41 @@ function updateCutaway(dt) {
   setCutaway(cutaway);
 }
 
+function computeNightness(t) {
+  const a = ((t + 0.25) % 1) * Math.PI * 2;
+  const h = Math.sin(a);
+  return THREE.MathUtils.clamp((0.12 - h) / 0.35, 0, 1);
+}
+
+function updateNightUI(n) {
+  const isNight = n > 0.5;
+  if (isNight !== uiNight) {
+    uiNight = isNight;
+    document.body.classList.toggle('night', isNight);
+    const ind = document.getElementById('day-indicator');
+    if (ind) ind.textContent = isNight ? '🌙' : '☀️';
+  }
+}
+
+function updateDayNight(dt, now) {
+  const nightness = computeNightness(dayTime);
+  if (worldLights) {
+    worldLights.setNight(nightness);
+    worldLights.fireflies.rotation.y += dt * 0.06;
+    worldLights.fireflies.position.y = 0.6 + Math.sin(now / 1000 * 0.5) * 0.2;
+  }
+  setInteriorNight(nightness);
+  updateNightUI(nightness);
+
+  dayTime = (dayTime + dt / DAY_SECONDS) % 1;
+  saveDayT += dt;
+  if (saveDayT > 15) {
+    saveDayT = 0;
+    gameState.dayTime = dayTime;
+    saveState();
+  }
+}
+
 function updateCamera(dt) {
   if (transition.active) return;
   if (!intro.active) {
@@ -822,6 +863,7 @@ function animate(now) {
   updateAmbient(dt);
   updateCamera(dt);
   updateCutaway(dt);
+  updateDayNight(dt, now);
 
   if (container.offsetParent !== null) renderer.render(scene, camera);
 }
@@ -842,6 +884,7 @@ export function initScene() {
     exteriorGroup = world.exterior;
     doorGroup = world.doorGroup;
     doorPivot = world.doorPivot;
+    worldLights = world.lights;
 
     interiorGroup = buildInterior();
     interiorGroup.visible = false;
@@ -850,6 +893,12 @@ export function initScene() {
     camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
     applyCamera();
     updateHint();
+
+    dayTime = typeof gameState.dayTime === 'number' ? gameState.dayTime : 0;
+    const initialNight = computeNightness(dayTime);
+    worldLights.setNight(initialNight);
+    setInteriorNight(initialNight);
+    updateNightUI(initialNight);
 
     threeReady = true;
     registerListeners();

@@ -83,21 +83,6 @@ export function buildWorld(scene) {
   roof.castShadow = true;
   exterior.add(roof);
 
-  for (const [x, w] of [[-2.4, 1.1], [2.4, 1.1]]) {
-    const win = new THREE.Mesh(
-      new THREE.BoxGeometry(w, 1.1, 0.1),
-      mat(0xbfe8ff)
-    );
-    win.position.set(x, 2.2, -1.48);
-    exterior.add(win);
-    const frame = new THREE.Mesh(
-      new THREE.BoxGeometry(w + 0.2, 0.12, 0.08),
-      mat(0xffffff)
-    );
-    frame.position.set(x, 2.2, -1.41);
-    exterior.add(frame);
-  }
-
   const fenceColors = [0xffd6c2, 0xc2e8ff, 0xfff1c2, 0xd9c2ff];
   for (let i = 0; i < 8; i++) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.0, 0.16), mat(fenceColors[i % 4]));
@@ -251,8 +236,102 @@ export function buildWorld(scene) {
   warm.position.set(0, 3, -2);
   scene.add(warm);
 
+  const exteriorWindows = [];
+  for (const [x, w] of [[-2.4, 1.1], [2.4, 1.1]]) {
+    const win = new THREE.Mesh(
+      new THREE.BoxGeometry(w, 1.1, 0.1),
+      mat(0xbfe8ff)
+    );
+    win.position.set(x, 2.2, -1.48);
+    exterior.add(win);
+    exteriorWindows.push(win.material);
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(w + 0.2, 0.12, 0.08),
+      mat(0xffffff)
+    );
+    frame.position.set(x, 2.2, -1.41);
+    exterior.add(frame);
+  }
+
   scene.background = new THREE.Color(0xcfeaff);
   scene.fog = new THREE.Fog(0xcfeaff, 30, 70);
 
-  return { ground, exterior, doorGroup, doorPivot };
+  const starPositions = [];
+  for (let i = 0; i < 160; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = 45 + Math.random() * 25;
+    starPositions.push(Math.cos(a) * r, 16 + Math.random() * 32, Math.sin(a) * r);
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPositions, 3));
+  const stars = new THREE.Points(
+    starGeo,
+    new THREE.PointsMaterial({ color: 0xffffff, size: 0.4, transparent: true, opacity: 0, depthWrite: false })
+  );
+  scene.add(stars);
+
+  const moonCanvas = document.createElement('canvas');
+  moonCanvas.width = moonCanvas.height = 64;
+  const mctx = moonCanvas.getContext('2d');
+  const mg = mctx.createRadialGradient(32, 32, 6, 32, 32, 30);
+  mg.addColorStop(0, 'rgba(255, 250, 235, 1)');
+  mg.addColorStop(1, 'rgba(255, 250, 235, 0)');
+  mctx.fillStyle = mg;
+  mctx.fillRect(0, 0, 64, 64);
+  const moon = new THREE.Sprite(
+    new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(moonCanvas), transparent: true, opacity: 0, depthWrite: false })
+  );
+  moon.position.set(34, 40, -26);
+  moon.scale.set(14, 14, 1);
+  scene.add(moon);
+
+  const flyPositions = [];
+  for (let i = 0; i < 22; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const r = 2 + Math.random() * 9;
+    flyPositions.push(Math.cos(a) * r, 0.3 + Math.random() * 1.8, Math.sin(a) * r);
+  }
+  const flyGeo = new THREE.BufferGeometry();
+  flyGeo.setAttribute('position', new THREE.Float32BufferAttribute(flyPositions, 3));
+  const fireflies = new THREE.Points(
+    flyGeo,
+    new THREE.PointsMaterial({
+      color: 0xd9ff8a,
+      size: 0.42,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    })
+  );
+  fireflies.position.y = 0.6;
+  scene.add(fireflies);
+
+  const daySky = new THREE.Color(0xffe9f0);
+  const nightSky = new THREE.Color(0x6a5fa0);
+  const dayGround = new THREE.Color(0xcfe9c8);
+  const nightGround = new THREE.Color(0x241e3e);
+  const dayBg = new THREE.Color(0xcfeaff);
+  const nightBg = new THREE.Color(0x1b1632);
+  const daySun = new THREE.Color(0xfff1d0);
+  const nightSun = new THREE.Color(0x8fa2ff);
+  const dayWindow = new THREE.Color(0xbfe8ff);
+  const nightWindow = new THREE.Color(0x3a3a66);
+
+  function setNight(t) {
+    sun.intensity = 1.3 - 1.18 * t;
+    sun.color.lerpColors(daySun, nightSun, t);
+    hemi.intensity = 0.9 - 0.55 * t;
+    hemi.color.lerpColors(daySky, nightSky, t);
+    hemi.groundColor.lerpColors(dayGround, nightGround, t);
+    warm.intensity = 0.5 + 0.45 * t;
+    scene.background.lerpColors(dayBg, nightBg, t);
+    scene.fog.color.copy(scene.background);
+    stars.material.opacity = t;
+    moon.material.opacity = t;
+    fireflies.material.opacity = 0.85 * t;
+    exteriorWindows.forEach((m) => m.color.lerpColors(dayWindow, nightWindow, t));
+  }
+
+  return { ground, exterior, doorGroup, doorPivot, lights: { setNight, fireflies } };
 }
